@@ -21,8 +21,8 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
   <rect x="68" y="81" width="34" height="3" fill="#B061FF"/>
   <text x="120" y="92" font-family="Consolas, monospace" font-size="22" letter-spacing="4" fill="#A9A8B6">BRANDON RANDLE</text>
 
-  <text x="80" y="300" font-family="Segoe UI, sans-serif" font-weight="700" font-size="96" fill="#F4F3F7">I make messy state</text>
-  <text x="80" y="404" font-family="Segoe UI, sans-serif" font-weight="700" font-size="96" fill="#FF5CB1">behave.</text>
+  <text x="80" y="300" font-family="Segoe UI, sans-serif" font-weight="700" font-size="96" fill="#F4F3F7">I turn noise into</text>
+  <text x="80" y="404" font-family="Segoe UI, sans-serif" font-weight="700" font-size="96" fill="#FF5CB1">signal.</text>
 
   <text x="82" y="466" font-family="Consolas, monospace" font-size="22" letter-spacing="1" fill="#6E6D7C">Data Acquisition Lead · LSU Formula SAE · CS @ LSU</text>
 
