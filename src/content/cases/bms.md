@@ -31,7 +31,5 @@ delta:
     label: called a session early
 links:
   - label: repo ↗
-    href: "#"
-  - label: notebook ↗
-    href: "#"
+    href: https://github.com/cordialApple/tiger-racing-bms-analysis
 ---

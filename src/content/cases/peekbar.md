@@ -31,7 +31,5 @@ delta:
     accent: p
 links:
   - label: repo ↗
-    href: "#"
-  - label: demo ↗
-    href: "#"
+    href: https://github.com/cordialApple/Peekbar
 ---

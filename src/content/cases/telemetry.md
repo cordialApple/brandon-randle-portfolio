@@ -42,7 +42,5 @@ delta:
     label: decision-ready, CI-guarded
 links:
   - label: repo ↗
-    href: "#"
-  - label: write-up ↗
-    href: "#"
+    href: https://github.com/cordialApple/tiger-racing-telemetry-pipeline
 ---

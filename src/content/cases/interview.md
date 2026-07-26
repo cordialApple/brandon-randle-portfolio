@@ -32,5 +32,7 @@ links:
   - label: Recall-Seed ↗
     href: https://github.com/cordialApple/Recall-Seed
   - label: STARfolio ↗
-    href: "#"
+    href: https://github.com/cordialApple/STARfolio
+  - label: Scroll ↗
+    href: https://github.com/cordialApple/Scroll
 ---
