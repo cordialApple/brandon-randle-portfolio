@@ -14,6 +14,8 @@ const {
 
 const path = Astro.url.pathname;
 const section = path.startsWith("/work") ? "work" : path.startsWith("/contact") ? "contact" : "home";
+const canonical = new URL(path, Astro.site);
+const ogImage = new URL("/og.png", Astro.site);
 ---
 <!doctype html>
 <html lang="en">
@@ -23,9 +25,19 @@ const section = path.startsWith("/work") ? "work" : path.startsWith("/contact") 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <title>{title}</title>
   <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Brandon Randle" />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
   <ClientRouter />
 </head>
 <body>
@@ -41,6 +53,54 @@ const section = path.startsWith("/work") ? "work" : path.startsWith("/contact") 
       });
     }
     document.addEventListener("astro:page-load", markActive);
+  </script>
+  <script>
+    const EASE = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    function run(el: HTMLElement) {
+      const raw = el.dataset.countRaw!;
+      const m = raw.match(/^(\D*?)([\d,]+(?:\.\d+)?)(.*)$/s);
+      if (!m) return;
+      const [, prefix, numStr, suffix] = m;
+      const decimals = (numStr.split(".")[1] || "").length;
+      const target = parseFloat(numStr.replace(/,/g, ""));
+      const dur = 900;
+      let start: number | null = null;
+      const step = (now: number) => {
+        if (start === null) start = now;
+        const t = Math.min(1, (now - start) / dur);
+        el.textContent = prefix + (target * EASE(t)).toFixed(decimals) + suffix;
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = prefix + target.toFixed(decimals) + suffix;
+      };
+      requestAnimationFrame(step);
+    }
+
+    function initCounts() {
+      const els = document.querySelectorAll<HTMLElement>("[data-count]");
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              run(e.target as HTMLElement);
+              io.unobserve(e.target);
+            }
+          }
+        },
+        { threshold: 0.4 },
+      );
+      els.forEach((el) => {
+        if (el.dataset.countRaw) return;
+        const raw = (el.textContent || "").trim();
+        el.dataset.countRaw = raw;
+        const m = raw.match(/^(\D*?)([\d,]+(?:\.\d+)?)(.*)$/s);
+        if (m) el.textContent = m[1] + (0).toFixed((m[2].split(".")[1] || "").length) + m[3];
+        io.observe(el);
+      });
+    }
+
+    document.addEventListener("astro:page-load", initCounts);
   </script>
 </body>
 </html>
