@@ -1,0 +1,31 @@
+---
+import Base from "../layouts/Base.astro";
+import { slide } from "astro:transitions";
+---
+<Base title="Contact — Brandon Randle">
+  <section class="view boxed" id="contact" transition:animate={slide({ duration: "0.5s" })}>
+    <div class="inner">
+      <div class="panel cpanel">
+        <div class="c-top">
+          <div class="eyebrow"><span class="tick" style="width:14px;height:14px"></span> CONTACT</div>
+          <h2>Come talk to me about your worst data.</h2>
+        </div>
+        <div class="vcard">
+          <div class="vcard-photo"><img src="/assets/headshot.png" alt="Brandon Randle" /></div>
+          <div class="vcard-body">
+            <div class="vcard-name">Brandon Randle</div>
+            <div class="vcard-role">Data Acquisition Lead · LSU Formula SAE</div>
+            <div class="vcard-meta">CS + DATA SCIENCE @ LSU · BATON ROUGE, LA · OPEN TO SUMMER 2026</div>
+          </div>
+          <a class="vcard-cta" href="mailto:brandon.randle1@lsu.edu">Email me →</a>
+        </div>
+        <div class="clinks">
+          <a href="mailto:brandon.randle1@lsu.edu"><span>Email</span><span>brandon.randle1@lsu.edu</span></a>
+          <a href="tel:+19853438406"><span>Phone</span><span>(985) 343-8406</span></a>
+          <a href="https://github.com/cordialApple"><span>GitHub</span><span>cordialApple ↗</span></a>
+          <a href="#"><span>LinkedIn</span><span>brandon-randle ↗</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

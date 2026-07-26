@@ -1,0 +1,46 @@
+---
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource-variable/instrument-sans";
+import "@fontsource-variable/martian-mono";
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import Nav from "../components/Nav.astro";
+import Strip from "../components/Strip.astro";
+
+const {
+  title = "Brandon Randle — data, systems, platforms",
+  description = "Brandon Randle builds the whole path from raw data to a decision-ready layer, profiles down to the metal, and builds on platforms — data engineering, systems performance, and AI-integrated workflows.",
+} = Astro.props;
+
+const path = Astro.url.pathname;
+const section = path.startsWith("/work") ? "work" : path.startsWith("/contact") ? "contact" : "home";
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="website" />
+  <ClientRouter />
+</head>
+<body>
+  <Nav section={section} transition:persist />
+  <slot />
+  <Strip section={section} transition:persist />
+  <script is:inline>
+    function markActive() {
+      const p = location.pathname;
+      const s = p.startsWith("/work") ? "work" : p.startsWith("/contact") ? "contact" : "home";
+      document.querySelectorAll("[data-sec]").forEach((el) => {
+        el.classList.toggle("on", el.getAttribute("data-sec") === s);
+      });
+    }
+    document.addEventListener("astro:page-load", markActive);
+  </script>
+</body>
+</html>

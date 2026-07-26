@@ -1,0 +1,10 @@
+---
+const { section } = Astro.props;
+---
+<div class="strip">
+  <a class:list={[{ on: section === "home" }]} data-sec="home" href="/">01 · home</a>
+  <span class="sep">/</span>
+  <a class:list={[{ on: section === "work" }]} data-sec="work" href="/work">02 · work</a>
+  <span class="sep">/</span>
+  <a class:list={[{ on: section === "contact" }]} data-sec="contact" href="/contact">03 · contact</a>
+</div>

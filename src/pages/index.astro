@@ -1,0 +1,21 @@
+---
+import Base from "../layouts/Base.astro";
+import { slide } from "astro:transitions";
+---
+<Base title="Brandon Randle — data, systems, platforms">
+  <section class="view boxed" id="home" transition:animate={slide({ duration: "0.5s" })}>
+    <div class="inner">
+      <div class="panel home-panel">
+        <div class="shapes"><span class="sh s4"></span></div>
+        <div class="home-copy">
+          <div class="home-mid">
+            <h1>I make messy state <span class="pk">behave.</span></h1>
+            <p class="thesis">i build the whole path from <em>raw data</em> to a <em>decision-ready layer</em>, profile down to the metal, and build on top of platforms — then i put a number on it.</p>
+          </div>
+          <div class="role">Data Acquisition Lead, <b>LSU Formula SAE</b> · CS @ LSU</div>
+        </div>
+        <div class="home-photo"><img src="/assets/headshot.png" alt="Brandon Randle, LSU Formula SAE" /></div>
+      </div>
+    </div>
+  </section>
+</Base>

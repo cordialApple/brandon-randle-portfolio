@@ -1,0 +1,17 @@
+---
+import VaultDiagram from "./VaultDiagram.astro";
+const { c, slug } = Astro.props;
+---
+<a class:list={["tile", c.accent]} href={`/work/${slug}`}>
+  <div class:list={["media", { arch: c.tileArch }]}>
+    {c.tileArch ? <VaultDiagram width="86%" /> : <img src={c.tileImage} alt={c.tileAlt} />}
+  </div>
+  <div class="body">
+    <div>
+      <span class="tag">{c.tileTag}</span>
+      <h3>{c.title}</h3>
+      <div class:list={["num", `c-${c.accent}`]}>{c.tileNum}</div>
+    </div>
+    <span class="go">↗</span>
+  </div>
+</a>

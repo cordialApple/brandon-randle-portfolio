@@ -1,0 +1,22 @@
+{
+  "name": "brandon-randle-portfolio",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "astro": "^5.6.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@fontsource-variable/bricolage-grotesque": "^5.1.0",
+    "@fontsource-variable/instrument-sans": "^5.1.0",
+    "@fontsource-variable/martian-mono": "^5.1.0",
+    "typescript": "^5.7.0"
+  }
+}

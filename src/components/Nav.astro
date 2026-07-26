@@ -1,0 +1,9 @@
+---
+const { section } = Astro.props;
+---
+<nav class="nav">
+  <a class="brand" href="/"><span class="tick"></span> Brandon Randle</a>
+  <a class:list={["lnk", { on: section === "work" }]} data-sec="work" href="/work">Work</a>
+  <a class:list={["lnk", { on: section === "contact" }]} data-sec="contact" href="/contact">Contact</a>
+  <a class="cta" href="https://github.com/cordialApple">GitHub ↗</a>
+</nav>

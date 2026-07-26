@@ -1,0 +1,26 @@
+---
+import Base from "../layouts/Base.astro";
+import { getCollection } from "astro:content";
+import { slide } from "astro:transitions";
+import WorkTile from "../components/WorkTile.astro";
+
+const cases = (await getCollection("cases")).sort((a, b) => a.data.order - b.data.order);
+---
+<Base title="Work — Brandon Randle">
+  <section class="view boxed" id="work" transition:animate={slide({ duration: "0.5s" })}>
+    <div class="inner">
+      <div class="panel work-panel">
+        <div class="work-head">
+          <div class="eyebrow"><span class="tick" style="width:14px;height:14px"></span> SELECTED WORK · 04 · click any to open</div>
+          <div class="work-lede">
+            <p>CS + data science at <strong>LSU</strong>. almost everything i build starts the same way: something feels off, nobody has checked, and it turns out worse than anyone guessed.</p>
+            <p>right now i'm an information-systems intern writing a <strong>C#/.NET MCP server</strong>. before that, an ELT pipeline that moved <strong>200,000+ student records</strong> off a legacy mainframe into a Kimball star schema. i lead data acquisition for <strong>LSU Formula SAE</strong> — wiring the car's telemetry and calling failures before the hardware does.</p>
+          </div>
+        </div>
+        <div class="tiles">
+          {cases.map((c) => <WorkTile c={c.data} slug={c.id} />)}
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

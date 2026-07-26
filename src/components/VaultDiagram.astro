@@ -1,0 +1,13 @@
+---
+const { width = "70%" } = Astro.props;
+---
+<svg viewBox="0 0 900 220" width={width} role="img" aria-label="Three systems on one vault">
+  <rect x="380" y="16" width="140" height="44" rx="10" fill="none" stroke="#B061FF" stroke-width="2"></rect>
+  <text x="450" y="43" fill="#B061FF" font-family="Martian Mono Variable, monospace" font-size="15" text-anchor="middle">VAULT</text>
+  <path d="M450 60 V92 M150 92 H760 M150 92 V150 M450 92 V150 M760 92 V150" fill="none" stroke="#3A3A4C" stroke-width="1.5"></path>
+  <g font-family="Martian Mono Variable, monospace" font-size="14" text-anchor="middle">
+    <rect x="70" y="150" width="160" height="48" rx="10" fill="none" stroke="#FF5CB1" stroke-width="2"></rect><text x="150" y="180" fill="#FF5CB1">Recall-Seed</text>
+    <rect x="370" y="150" width="160" height="48" rx="10" fill="none" stroke="#2E9BFF" stroke-width="2"></rect><text x="450" y="180" fill="#2E9BFF">STARfolio</text>
+    <rect x="680" y="150" width="160" height="48" rx="10" fill="none" stroke="#37E0A0" stroke-width="2"></rect><text x="760" y="180" fill="#37E0A0">Scroll</text>
+  </g>
+</svg>

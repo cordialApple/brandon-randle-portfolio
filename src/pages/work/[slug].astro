@@ -1,0 +1,63 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getCollection } from "astro:content";
+import { slide } from "astro:transitions";
+import VaultDiagram from "../../components/VaultDiagram.astro";
+
+export async function getStaticPaths() {
+  const cases = await getCollection("cases");
+  return cases.map((c) => ({ params: { slug: c.id }, props: { c } }));
+}
+
+const { c } = Astro.props;
+const d = c.data;
+---
+<Base title={`${d.title} — Brandon Randle`}>
+  <section class="view case" transition:animate={slide({ duration: "0.5s" })}>
+    <div class="inner">
+      <a class="back" href="/work">← all work</a>
+      <span class:list={["case-tag", `c-${d.accent}`]}>{d.tag}</span>
+      <h1>{d.title}</h1>
+      <p class="case-lede" set:html={d.lede}></p>
+
+      {d.heroArch ? (
+        <div class="case-media arch"><VaultDiagram width="70%" /></div>
+      ) : (
+        <div class="case-media"><img src={d.heroImage} alt={d.heroAlt} /></div>
+      )}
+
+      {d.finding && (
+        <div class="finding">
+          <div class="fk">{d.finding.title}</div>
+          <p set:html={d.finding.body}></p>
+        </div>
+      )}
+
+      {d.media2 && (
+        <div class="case-media"><img src={d.media2.image} alt={d.media2.alt} /></div>
+      )}
+
+      <div class="meta">
+        {d.meta.map((m) => (
+          <div class="m"><div class="k">{m.k}</div><div class="v">{m.v}</div></div>
+        ))}
+      </div>
+
+      <div class="delta">
+        <div>
+          <div class:list={["db", d.delta.before.accent && `c-${d.delta.before.accent}`]}>{d.delta.before.v}</div>
+          <div class="dl">{d.delta.before.label}</div>
+        </div>
+        <span class="arrow">→</span>
+        <div>
+          <div class:list={["db", d.delta.after.accent && `c-${d.delta.after.accent}`]}>{d.delta.after.v}</div>
+          <div class="dl">{d.delta.after.label}</div>
+        </div>
+      </div>
+
+      <div class="links">
+        {d.links.map((l) => <a href={l.href}>{l.label}</a>)}
+      </div>
+    </div>
+  </section>
+</Base>
