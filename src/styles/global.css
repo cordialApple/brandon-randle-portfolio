@@ -70,9 +70,9 @@ h1 .pk{color:var(--pink);text-shadow:0 0 60px rgba(255,92,177,.4)}
 .home-copy h1{font-size:clamp(2.9rem,6vw,5.4rem)}
 .home-mid{max-width:30ch}
 .home-photo{border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.1);min-height:360px;position:relative;z-index:1}
-.home-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
-.home-photo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:30%;z-index:1;pointer-events:none;
-  background:linear-gradient(to top,rgba(10,10,18,.8),transparent)}
+.home-photo img{width:100%;height:100%;object-fit:cover;object-position:left bottom;display:block}
+.home-photo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;z-index:1;pointer-events:none;
+  background:linear-gradient(to top,rgba(10,10,18,.55),transparent)}
 .home-photo .frame{position:absolute;inset:14px;z-index:2;pointer-events:none}
 .home-photo .frame::before,.home-photo .frame::after{content:"";position:absolute;width:28px;height:28px;border:2px solid var(--pink)}
 .home-photo .frame::before{top:0;left:0;border-right:none;border-bottom:none;animation:markIn .55s .25s both}
