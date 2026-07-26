@@ -45,12 +45,12 @@ const d = c.data;
 
       <div class="delta">
         <div>
-          <div class:list={["db", d.delta.before.accent && `c-${d.delta.before.accent}`]}>{d.delta.before.v}</div>
+          <div class:list={["db", d.delta.before.accent && `c-${d.delta.before.accent}`]} data-count>{d.delta.before.v}</div>
           <div class="dl">{d.delta.before.label}</div>
         </div>
         <span class="arrow">→</span>
         <div>
-          <div class:list={["db", d.delta.after.accent && `c-${d.delta.after.accent}`]}>{d.delta.after.v}</div>
+          <div class:list={["db", d.delta.after.accent && `c-${d.delta.after.accent}`]} data-count>{d.delta.after.v}</div>
           <div class="dl">{d.delta.after.label}</div>
         </div>
       </div>
