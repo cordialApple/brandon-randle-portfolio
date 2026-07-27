@@ -161,9 +161,8 @@ h1 .pk{color:var(--pink);text-shadow:0 0 60px rgba(255,92,177,.4)}
 
 .cpanel h2{font-family:var(--font-display);font-weight:700;font-size:clamp(2.4rem,5.6vw,4.7rem);
   letter-spacing:-.02em;line-height:1.02;max-width:15ch;margin-top:20px;text-shadow:0 0 50px rgba(255,92,177,.2)}
-.clinks{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+.clinks{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
   font-family:var(--font-mono);font-size:13.5px}
-.clinks a span:last-child{overflow-wrap:anywhere}
 .clinks a{border:1px solid var(--edge);border-radius:16px;padding:22px 20px;display:flex;flex-direction:column;gap:10px;min-height:96px;justify-content:flex-end}
 .clinks a span:first-child{color:var(--dim);font-size:11.5px}
 .clinks a:hover{border-color:var(--purple)}
