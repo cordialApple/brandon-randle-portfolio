@@ -1,0 +1,12 @@
+---
+interface Props { kind: "production" | "platform" }
+const { kind } = Astro.props;
+const steps = ["edge inspection system", "MQTT over TLS", "C#/.NET worker", "SQL Server"];
+---
+<figure class="system-figure">
+  {kind === "production" ? (
+    <><ol class="pipeline-flow" aria-label="production telemetry data flow">{steps.map((step) => <li>{step}</li>)}</ol><figcaption>direct ingestion from internal edge broker; no intermediate third-party broker.</figcaption></>
+  ) : (
+    <><div class="platform-flow"><div><strong>Recall-Seed</strong><span>C#/.NET MCP server</span></div><span class="flow-direction" aria-hidden="true">↔</span><div><strong>markdown vault or SQLite</strong><span>one storage interface, two implementations</span></div></div><div class="platform-clients"><p><strong>STARfolio</strong><span>desktop interviews + SQLite search</span></p><p><strong>Scroll</strong><span>coding endpoints + grading callbacks</span></p></div><figcaption>Recall-Seed can use STARfolio’s SQLite store and exchange coding challenges with Scroll. each system has a distinct responsibility.</figcaption></>
+  )}
+</figure>

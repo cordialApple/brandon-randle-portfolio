@@ -1,21 +1,28 @@
 ---
 import Base from "../layouts/Base.astro";
-import { slide } from "astro:transitions";
+import Experience from "../components/Experience.astro";
 ---
-<Base title="Brandon Randle — data, systems, platforms">
-  <section class="view boxed" id="home" transition:animate={slide({ duration: "0.5s" })}>
-    <div class="inner">
-      <div class="panel home-panel">
-        <div class="shapes"><span class="sh s4"></span></div>
-        <div class="home-copy">
-          <div class="home-mid">
-            <h1>I turn noise into <span class="pk">signal.</span></h1>
-            <p class="thesis">Turning <em>raw data</em> into <em>actionable analysis</em>, profiling down to the metal for better perf, and building on top of platforms: <span class="pk">I solve pain points</span></p>
-          </div>
-          <div class="role">Data Acquisition Lead, <b>LSU Formula SAE</b> · CS @ LSU</div>
-        </div>
-        <div class="home-photo"><img src="/assets/headshot.png" alt="Brandon Randle, LSU Formula SAE" /><span class="frame" aria-hidden="true"></span></div>
-      </div>
+<Base>
+  <section class="hero" aria-labelledby="intro-title">
+    <div class="hero-copy">
+      <p class="eyebrow">CS + mathematics at LSU</p>
+      <h1 id="intro-title">data engineering.<br /><span class="pink">backend systems.</span></h1>
+      <p class="hero-description">i build pipelines from messy source data to useful answers, and the services that keep them running. currently shipping C#/.NET and SQL Server work at RoyOMartin.</p>
+      <div class="actions"><a class="button" href="/work/">explore my work <span aria-hidden="true">→</span></a><a class="text-link" href="mailto:brandon.randle1@lsu.edu">email me ↗</a></div>
+      <p class="availability"><span class="status-dot" aria-hidden="true"></span>open to summer 2027 opportunities <span class="location">Baton Rouge, LA</span></p>
+    </div>
+    <figure class="portrait"><img src="/assets/headshot.png" width="926" height="998" alt="Brandon Randle wearing LSU Tiger Racing team polo" fetchpriority="high" /><figcaption>Brandon Randle <span>LSU Formula SAE</span></figcaption></figure>
+  </section>
+  <Experience />
+  <section class="section-block" aria-labelledby="selected-title">
+    <div class="section-heading"><div><h2 id="selected-title">selected projects</h2></div><a class="text-link" href="/work/">all work →</a></div>
+    <a class="featured-project" href="/work/telemetry/">
+      <div class="feature-image"><img src="/assets/telemetry.png" width="1280" height="720" alt="Formula SAE telemetry dashboard with session and sensor summaries" loading="lazy" /></div>
+      <div class="feature-copy"><p class="eyebrow blue">data engineering</p><h3>race telemetry pipeline <span aria-hidden="true">↗</span></h3><p>two cars, different log formats, one queryable system. repeatable ingestion, typed APIs, and checks that run against a real database.</p><span class="metadata">Python · TimescaleDB · FastAPI · Power BI</span></div>
+    </a>
+    <div class="project-pair">
+      <a class="compact-project" href="/work/interview/"><p class="eyebrow pink">backend software</p><h3>interview platform <span aria-hidden="true">↗</span></h3><p>19 MCP tools over markdown or SQLite, with source-linked career evidence and coding endpoints.</p><span class="metadata">C#/.NET · SQLite · TypeScript</span></a>
+      <a class="compact-project" href="/work/peekbar/"><p class="eyebrow purple">systems performance</p><h3>Peekbar <span aria-hidden="true">↗</span></h3><p>browser tabs within reach. profiled and rebuilt activation path: median latency from 539 ms to 95 ms.</p><span class="metadata">C++23 · Win32 · ETW</span></a>
     </div>
   </section>
 </Base>

@@ -1,38 +1,36 @@
-# brandon-randle-portfolio
+# Brandon Randle portfolio
 
-Personal portfolio for Brandon Randle — data engineering, systems performance, and AI-integrated workflows. Built as a multi-view deck: Home, Work, and Contact slide horizontally, and each Work tile opens its own case page.
+Astro static portfolio for data engineering, data-platform SWE, and backend roles. Keeps original portrait, palette, self-hosted fonts, and existing URLs.
 
-## Stack
+## Development
 
-- **Astro 5** (static output) with `<ClientRouter />` view transitions for the slide navigation
-- **TypeScript** (strict)
-- Case studies as a typed **content collection** (`src/content/cases/*.md`)
-- Plain CSS design tokens (`src/styles/global.css`) — no CSS framework
-- Self-hosted variable fonts via Fontsource: Bricolage Grotesque (display), Instrument Sans (body), Martian Mono (labels/metrics)
-- Target deploy: **Cloudflare Pages**
+Requires Node compatible with installed Astro version. Use lockfile for reproducible installs.
 
-## Develop
-
-```bash
-npm install
-npm run dev       # http://localhost:4321
-npm run build     # static build to ./dist
-npm run preview   # serve the build
-npm run check     # astro check (types + template diagnostics)
-```
-
-## Structure
-
-```
-src/
-  pages/            index · work · contact · work/[slug]
-  layouts/Base.astro    document shell, gradient frame, persistent nav + filmstrip
-  components/        Nav · Strip · WorkTile · VaultDiagram
-  content/cases/     one .md per case study (telemetry · bms · peekbar · interview)
-  styles/global.css  design tokens + all component styles
-public/assets/       dashboards, headshot, diagrams
+```sh
+npm ci
+npm run dev
+npm run check
+npm run build
+npm run preview
 ```
 
 ## Content
 
-Each case study is one markdown file with typed frontmatter (title, tag, accent, tiles, lede, hero, meta, delta, links). The schema lives in `src/content.config.ts`. Add a case by dropping a new `.md` in `src/content/cases/` — it appears on `/work` and gets its own `/work/<slug>` page automatically.
+- `src/pages/index.astro`: introduction and selected projects.
+- `src/components/Experience.astro`: employment and team experience.
+- `src/content/cases/*.md`: typed case metadata and engineering narratives.
+- `src/pages/work/[slug].astro`: shared case template.
+- `src/styles/global.css`: palette, layout, responsive rules, focus styles.
+- `public/resume.pdf`: current one-page resume with embedded links.
+
+Existing `/work/telemetry`, `/work/interview`, `/work/peekbar`, `/work/bms`, and `/contact` routes remain. New `/work/production-telemetry` covers internship ingestion work.
+
+Before publishing content updates, reconcile resume dates, project status, and metric scope. Synthetic workloads remain explicitly labeled. Use original-size evidence links for readable charts on phones.
+
+## Deployment
+
+Existing Cloudflare Pages workflow remains `npm run build`, output `dist`. Canonical URL remains original public portfolio address.
+
+## Validation
+
+Run Astro diagnostics and build. Check home, work, contact, and all case routes at desktop and 390px width; confirm no overflow or header overlap. Follow resume, contact, source, and full-image links. Original portrait SHA-256 must match retained asset.

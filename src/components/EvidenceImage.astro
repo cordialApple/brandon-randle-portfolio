@@ -1,0 +1,5 @@
+---
+interface Props { image: { src: string; alt: string; caption: string } }
+const { image } = Astro.props;
+---
+<figure class="evidence-image"><a href={image.src} target="_blank" rel="noopener" aria-label={`Open full-size image: ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /></a><figcaption>{image.caption} <a href={image.src} target="_blank" rel="noopener">open full image ↗<span class="sr-only"> (new tab)</span></a></figcaption></figure>

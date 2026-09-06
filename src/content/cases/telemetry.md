@@ -1,46 +1,48 @@
 ---
-order: 1
-title: Race Telemetry
-tag: SYSTEMS · DATA ENGINEERING
-accent: b
-tileTag: Python · TimescaleDB · Power BI
-tileNum: 18 sessions → queryable
-tileImage: /assets/telemetry.png
-tileAlt: Power BI season overview
-lede: >-
-  One night at UTA autocross, 18 sessions of raw CAN logs. I built the whole
-  path: content-hash idempotent ingest with per-file error isolation, a
-  1&nbsp;Hz continuous aggregate on a TimescaleDB hypertable, a star schema,
-  typed FastAPI serving, and CI that runs against a real database.
-heroImage: /assets/telemetry.png
-heroAlt: Power BI season overview dashboard
-finding:
-  title: ⌐ what the aggregate caught — oil starvation
-  body: >-
-    At 8k+ RPM under peak lateral G, minimum oil pressure fell to
-    <strong>0.00 bar</strong> — <strong>187 s</strong> of oil dip across the
-    night, and coolant kept climbing past 100 °C (112 s over the line). The
-    1 Hz aggregate made the starvation obvious session-over-session — before it
-    turned into engine damage.
-media2:
-  image: /assets/telemetry-findings.png
-  alt: Oil pressure vs grip, coolant-over-time, and channel-health findings
-meta:
-  - k: Stack
-    v: Python · TimescaleDB · FastAPI · Power BI
-  - k: Role
-    v: Designed & built the pipeline end to end
-  - k: Result
-    v: Aggregate exposed oil starvation, cooling limits & dead channels
-delta:
-  before:
-    v: 18 sessions
-    label: raw CAN logs, one night
-    accent: b
-  after:
-    v: 1 queryable layer
-    label: decision-ready, CI-guarded
+order: 2
+title: race telemetry pipeline
+category: data engineering
+accent: blue
+summary: Two Formula SAE cars, different logger formats, one pipeline from raw CSV exports to a TimescaleDB warehouse, typed API, and Power BI dashboards.
+outcome: repeatable ingestion across two car platforms
+stack: Python · TimescaleDB · FastAPI · Power BI · GitHub Actions
+role: Designed and built parsing, ingestion, database model, API, dashboards, and validation.
+status: Implemented · historical 2023 and 2026 datasets
+image:
+  src: /assets/telemetry.png
+  alt: Power BI overview of 18 sessions from the 2023 Formula SAE combustion car
+  caption: 2023 example — 18 sessions from one evening at UTA Autocross; not a full season of track events.
+secondaryImage:
+  src: /assets/telemetry-findings.png
+  alt: Historical oil pressure, lateral grip, coolant temperature, and channel-health dashboard
+  caption: 2023 diagnostic views. Findings describe recorded data; they do not establish that engine damage was prevented.
 links:
-  - label: repo ↗
+  - label: source code
     href: https://github.com/cordialApple/tiger-racing-telemetry-pipeline
+  - label: findings & dashboards
+    href: https://github.com/cordialApple/tiger-racing-telemetry-pipeline/tree/main/reports
+  - label: tests & CI
+    href: https://github.com/cordialApple/tiger-racing-telemetry-pipeline/actions/workflows/tests.yml
 ---
+## the problem
+
+the 2023 combustion car used an AiM logger; the 2026 electric car used CAN exports with a different channel set. raw files needed a consistent path into analysis without treating the two cars as identical.
+
+current corpus covers **18 sessions from October 7, 2023**, and **26 files from the July 18, 2026 drive day**. file count and session count are different units.
+
+## engineering decisions
+
+- **safe reruns.** content hashes identify previously ingested files. source-path attribution preserves where duplicate files came from.
+- **isolated failures.** a malformed file fails independently so remaining sessions can load.
+- **one serving contract.** a TimescaleDB hypertable and 1 Hz aggregate feed typed FastAPI responses. Power BI contract tests check requested columns against response models.
+- **different cars, explicit identity.** platform and event fields distinguish datasets; sensor specifications stay specific to each car.
+
+## verification
+
+CI runs lint, database-free checks, and the full suite against a pinned TimescaleDB service. a preflight assertion prevents database tests from silently skipping. database tests use a separate test database.
+
+committed data profiles capture channel sets, sample spacing, duplicate groups, and extremes. CI compares fresh profiles with those baselines to catch changes in incoming data.
+
+## what the data showed
+
+historical 2023 analysis surfaced oil-pressure dips under cornering, cooling limits, and dead channels. 2026 analysis surfaced low coolant flow, inverter overcurrent trips, and a channel labeled `Pack_SOC` that represented temperature. these findings show why validation matters before dashboard interpretation.

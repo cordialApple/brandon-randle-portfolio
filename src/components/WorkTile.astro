@@ -1,18 +1,11 @@
 ---
-import VaultDiagram from "./VaultDiagram.astro";
-const { c, slug } = Astro.props;
+import type { CollectionEntry } from "astro:content";
+interface Props { entry: CollectionEntry<"cases"> }
+const { entry } = Astro.props;
+const c = entry.data;
 ---
-<a class:list={["tile", c.accent]} href={`/work/${slug}`}>
-  <div class:list={["media", { arch: c.tileArch }]}>
-    {c.tileArch ? <VaultDiagram width="86%" /> : <img src={c.tileImage} alt={c.tileAlt} />}
-  </div>
-  <div class="body">
-    <div>
-      <span class="tag">{c.tileTag}</span>
-      <h3>{c.title}</h3>
-      <div class:list={["num", `c-${c.accent}`]}>{c.tileNum}</div>
-    </div>
-    <span class="go">↗</span>
-  </div>
-  <span class="frame" aria-hidden="true"></span>
+<a class="work-row" href={`/work/${entry.id}/`}>
+  <div class="work-category"><span class:list={["eyebrow", c.accent]}>{c.category}</span><span class="metadata">{c.status}</span></div>
+  <div><h2>{c.title}</h2><p>{c.summary}</p><span class="work-outcome">{c.outcome}</span><span class="metadata">{c.stack}</span></div>
+  <span class="work-arrow" aria-hidden="true">↗</span>
 </a>
