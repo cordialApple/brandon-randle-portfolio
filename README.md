@@ -1,6 +1,6 @@
 # Brandon Randle portfolio
 
-Astro static portfolio for data engineering, data-platform SWE, and backend roles. Keeps original portrait, palette, self-hosted fonts, and existing URLs.
+Astro static portfolio for data engineering, data-platform SWE, and backend roles. Synthwave palette, custom signal-landscape SVGs, self-hosted fonts, original portrait, and preserved URLs.
 
 ## Development
 
@@ -18,10 +18,13 @@ npm run preview
 
 - `src/pages/index.astro`: introduction and selected projects.
 - `src/components/Experience.astro`: employment and team experience.
+- `src/components/SignalLandscape.astro`: decorative sunset, infrastructure, and telemetry SVG.
+- `src/components/ProjectGlyph.astro`: project-specific SVG illustrations.
 - `src/content/cases/*.md`: typed case metadata and engineering narratives.
 - `src/pages/work/[slug].astro`: shared case template.
 - `src/styles/global.css`: palette, layout, responsive rules, focus styles.
-- `public/resume.pdf`: current one-page resume with embedded links.
+- `public/Brandon_Randle_SWE.docx`: current attached résumé; linked from navigation, Contact, and footer.
+- `scripts/gen-og.mjs`: regenerate matching social preview with `node scripts/gen-og.mjs`.
 
 Existing `/work/telemetry`, `/work/interview`, `/work/peekbar`, `/work/bms`, and `/contact` routes remain. New `/work/production-telemetry` covers internship ingestion work.
 
@@ -29,7 +32,7 @@ Before publishing content updates, reconcile resume dates, project status, and m
 
 ## Deployment
 
-Existing Cloudflare Pages workflow remains `npm run build`, output `dist`. Canonical URL remains original public portfolio address.
+Pushes to `main` in `cordialApple/brandon-randle-portfolio` trigger Cloudflare Pages: `npm run build`, output `dist`. Production URL: `https://brandon-randle-portfolio.pages.dev`.
 
 ## Validation
 

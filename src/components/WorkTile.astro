@@ -3,9 +3,30 @@ import type { CollectionEntry } from "astro:content";
 interface Props { entry: CollectionEntry<"cases"> }
 const { entry } = Astro.props;
 const c = entry.data;
+const glyphs: Record<string, string> = {
+  "production-telemetry": "M10 30h12m20 0h12M22 20h20v20H22zM27 14v6m10-6v6M27 40v6m10-6v6M28 26h8v8h-8z",
+  telemetry: "M8 35h10l6-14 9 25 8-32 6 21h9M8 51h48M12 12v39",
+  interview: "M8 17h21v16H8zM35 31h21v16H35zM29 25h15v6M20 33v8h15M13 23h11m-11 5h7m20 9h11m-11 5h7",
+  peekbar: "M8 14h48v33H8zM8 23h48M14 18h1m5 0h1m5 0h1M14 53h36M18 29h12v12H18zM35 29h15m-15 6h10",
+  bms: "M11 19h40v29H11zM51 28h5v11h-5M18 27v13m8-13v13m8-13v13m8-13v13M22 13h17",
+};
 ---
 <a class="work-row" href={`/work/${entry.id}/`}>
-  <div class="work-category"><span class:list={["eyebrow", c.accent]}>{c.category}</span><span class="metadata">{c.status}</span></div>
-  <div><h2>{c.title}</h2><p>{c.summary}</p><span class="work-outcome">{c.outcome}</span><span class="metadata">{c.stack}</span></div>
+  <div class="work-category"><svg class:list={["work-glyph", c.accent]} viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d={glyphs[entry.id]} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span class:list={["eyebrow", c.accent]}>{c.category}</span><span class="metadata">{c.status}</span></div>
+  <div class="work-copy"><h2>{c.title}</h2><p>{c.summary}</p><span class="work-outcome"><span class="outcome-tick" aria-hidden="true">↳</span> {c.outcome}</span><span class="metadata work-stack">{c.stack}</span></div>
   <span class="work-arrow" aria-hidden="true">↗</span>
 </a>
+<style>
+  .work-row { grid-template-columns: minmax(160px, .7fr) minmax(0, 2fr) 40px; gap: 40px; padding: 36px 0; transition: border-color .2s; }
+  .work-row:hover { border-color: var(--pink); }
+  .work-glyph { width: 54px; height: 54px; margin-bottom: 8px; }
+  .work-row h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+  .work-row .work-category { gap: 8px; }
+  .work-row .work-category .metadata { margin-top: 0; }
+  .work-outcome { color: var(--hi); }
+  .outcome-tick { color: var(--pink); padding-right: 5px; }
+  .work-row .work-stack { font-size: .78rem; margin-top: 20px; }
+  .work-arrow { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--edge); border-radius: 50%; transition: color .2s, border-color .2s; }
+  .work-row:hover .work-arrow { border-color: var(--pink); }
+  @media(max-width: 720px) { .work-row { grid-template-columns: minmax(0,1fr) 32px; gap: 18px; padding-block: 28px; } .work-row .work-category { display: grid; grid-template-columns: 42px 1fr; gap: 2px 14px; align-items: center; } .work-glyph { grid-row: span 2; width: 42px; height: 42px; margin: 0; } .work-arrow { width: 32px; height: 32px; } }
+</style>

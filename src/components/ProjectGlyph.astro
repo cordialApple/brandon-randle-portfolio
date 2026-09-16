@@ -1,0 +1,36 @@
+---
+interface Props { kind: string }
+const { kind } = Astro.props;
+---
+<svg viewBox="0 0 360 160" fill="none" aria-hidden="true" focusable="false">
+  <path d="M0 40H360M0 80H360M0 120H360M60 0V160M120 0V160M180 0V160M240 0V160M300 0V160" stroke="currentColor" opacity=".08" />
+  {kind === "production" && <>
+    <rect x="26" y="52" width="68" height="56" rx="4" stroke="currentColor" /><path d="M39 67H80M39 79H67M39 91H75M94 80H140M220 80H266" stroke="currentColor" />
+    <path d="M140 56L180 34L220 56V104L180 126L140 104ZM140 56L180 80L220 56M180 80V126" stroke="currentColor" fill="currentColor" fill-opacity=".07" />
+    <ellipse cx="300" cy="56" rx="34" ry="12" stroke="currentColor" /><path d="M266 56V104C266 120 334 120 334 104V56M266 80C266 96 334 96 334 80" stroke="currentColor" />
+  </>}
+  {kind === "telemetry" && <>
+    <path d="M20 107H66L78 94L90 115L108 70L122 96L140 36L154 112L174 69L192 87H214L227 56L242 93L257 75L278 82H340" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+    <path d="M20 124H340M20 26V133" stroke="currentColor" opacity=".3" />
+    <path d="M20 96C62 94 64 49 99 59S137 126 174 102S217 35 254 51S308 108 340 57" stroke="currentColor" opacity=".28" stroke-dasharray="4 5" />
+    <circle cx="140" cy="36" r="5" fill="currentColor" /><circle cx="140" cy="36" r="12" stroke="currentColor" opacity=".3" />
+    <path d="M140 15V124" stroke="currentColor" opacity=".2" stroke-dasharray="3 5" />
+  </>}
+  {kind === "platform" && <>
+    <path d="M82 47H125L151 76M82 114H122L151 84M209 80H244L270 47M244 80L270 114" stroke="currentColor" opacity=".6" />
+    <path d="M151 61L180 45L209 61V98L180 114L151 98Z" fill="currentColor" fill-opacity=".07" stroke="currentColor" /><path d="M151 61L180 78L209 61M180 78V114" stroke="currentColor" />
+    <rect x="48" y="32" width="34" height="29" rx="3" stroke="currentColor" /><path d="M56 42L61 47L56 52M65 52H73" stroke="currentColor" />
+    <rect x="48" y="100" width="34" height="29" rx="3" stroke="currentColor" /><path d="M57 110H73M57 117H68" stroke="currentColor" />
+    <ellipse cx="288" cy="34" rx="18" ry="7" stroke="currentColor" /><path d="M270 34V56C270 66 306 66 306 56V34M270 45C270 55 306 55 306 45" stroke="currentColor" />
+    <rect x="271" y="99" width="34" height="29" rx="3" stroke="currentColor" /><path d="M279 109H297M279 116H291" stroke="currentColor" />
+    <circle cx="124" cy="47" r="3" fill="currentColor" /><circle cx="244" cy="80" r="3" fill="currentColor" />
+  </>}
+  {kind !== "telemetry" && kind !== "platform" && kind !== "production" && <>
+    <path d="M68 124A112 112 0 0 1 292 124" stroke="currentColor" stroke-width="1" opacity=".25" />
+    <path d="M85 124A95 95 0 0 1 275 124" stroke="currentColor" stroke-width="9" opacity=".1" />
+    <path d="M85 124A95 95 0 0 1 252 62" stroke="currentColor" stroke-width="3" />
+    <path d="M180 23V34M109 53L117 61M251 53L243 61M78 124H89M271 124H282" stroke="currentColor" />
+    <path d="M180 124L242 73" stroke="currentColor" stroke-width="2" /><circle cx="180" cy="124" r="6" fill="currentColor" /><circle cx="180" cy="124" r="13" stroke="currentColor" opacity=".3" />
+    <path d="M23 145H337" stroke="currentColor" opacity=".15" />
+  </>}
+</svg>

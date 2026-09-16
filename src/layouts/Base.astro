@@ -8,7 +8,7 @@ import Footer from "../components/Footer.astro";
 
 interface Props { title?: string; description?: string }
 const {
-  title = "Brandon Randle — data engineering & backend systems",
+  title = "Brandon Randle — Data Engineering & Backend Systems",
   description = "Data engineering, data platforms, and backend software. Brandon Randle's production pipelines, database work, and measured systems projects. CS and mathematics at LSU.",
 } = Astro.props;
 const path = Astro.url.pathname;
@@ -44,7 +44,7 @@ const ogImage = new URL("/og.png", Astro.site);
     <meta name="twitter:image" content={ogImage} />
   </head>
   <body>
-    <a class="skip-link" href="#main">skip to content</a>
+    <a class="skip-link" href="#main">Skip to content</a>
     <div class="site-shell">
       <Nav section={section} />
       <main id="main" tabindex="-1"><slot /></main>

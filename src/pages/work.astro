@@ -5,6 +5,18 @@ import WorkTile from "../components/WorkTile.astro";
 const cases = (await getCollection("cases")).sort((a,b) => a.data.order - b.data.order);
 ---
 <Base title="Work — Brandon Randle" description="Production telemetry, data pipelines, backend software, and measured systems performance. Explore Brandon Randle's engineering work and evidence.">
-  <header class="page-heading"><p class="eyebrow">experience + selected projects</p><h1>engineering <span class="pink">work.</span></h1><p>production work and personal projects, with what i owned, why i built it that way, and evidence you can inspect.</p></header>
+  <header class="page-heading work-heading">
+    <div><h1 class="eyebrow">Selected Work</h1><p class="work-intro">Production systems, race-car data, and software built from curiosity. What I owned, why I built it that way, and evidence you can inspect.</p></div>
+    <svg class="work-signal" viewBox="0 0 260 180" fill="none" aria-hidden="true"><path d="M0 145H260M0 105H260M0 65H260M35 25V165M95 25V165M155 25V165M215 25V165" stroke="currentColor" opacity=".18"/><path d="M0 105H38L55 84L76 125L104 39L131 141L153 72L171 105H260" stroke="var(--pink)" stroke-width="2"/><path d="M0 128H53L77 107H100L130 82H158L189 54H260" stroke="var(--blue)" stroke-width="2"/><circle cx="189" cy="54" r="5" fill="var(--blue)"/><path d="M189 39V21H250" stroke="var(--blue)" opacity=".6"/></svg>
+  </header>
+  <div class="work-index"><span class="eyebrow">Project Archive</span><span class="eyebrow">{cases.length} case studies / source-linked evidence</span></div>
   <section class="work-list" aria-label="engineering case studies">{cases.map(entry => <WorkTile entry={entry} />)}</section>
 </Base>
+<style>
+  .work-heading { display: grid; grid-template-columns: 1fr 260px; max-width: none; gap: 48px; align-items: center; padding-block: 80px 64px; }
+  .work-heading h1 { font-size: .72rem; line-height: 1.6; }
+  .work-intro { color: var(--mid); max-width: 52ch; margin-top: 28px; }
+  .work-signal { width: 100%; color: var(--purple); }
+  .work-index { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 20px; }
+  @media(max-width: 720px) { .work-heading { grid-template-columns: 1fr; padding-block: 44px 40px; gap: 24px; } .work-signal { width: 180px; height: 100px; } .work-index { flex-wrap: wrap; gap: 8px; } }
+</style>

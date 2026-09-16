@@ -1,0 +1,124 @@
+---
+interface Props {
+  id?: string;
+}
+
+const { id = 'signal-landscape' } = Astro.props;
+const ref = (name: string) => `url(#${id}-${name})`;
+const gridRows = [302, 309, 319, 333, 352, 379, 415, 466, 535, 628];
+const gridEnds = [-1600, -1120, -760, -480, -250, -70, 90, 245, 400, 555, 710, 870, 1050, 1280, 1560, 1920, 2400];
+const stars = [[95, 80, 1.3], [166, 153, 1], [226, 52, 1], [310, 87, 1.3], [487, 44, 1], [596, 113, 1.2], [659, 62, 1.7], [727, 178, 1], [565, 213, 1], [55, 218, 1], [726, 99, 0.8], [178, 228, 0.8]];
+---
+
+<svg class="signal-landscape" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id={`${id}-atmosphere`} cx="50%" cy="42%" r="58%">
+      <stop stop-color="#772956" stop-opacity=".4" />
+      <stop offset=".48" stop-color="#3e225f" stop-opacity=".2" />
+      <stop offset="1" stop-color="#090713" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id={`${id}-sun`} x1="400" y1="104" x2="400" y2="299" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffae83" />
+      <stop offset=".45" stop-color="#ff758b" />
+      <stop offset="1" stop-color="#ff4fa0" />
+    </linearGradient>
+    <linearGradient id={`${id}-ground`} x1="400" y1="294" x2="400" y2="598" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff4fa0" stop-opacity=".5" />
+      <stop offset=".3" stop-color="#a44bb3" stop-opacity=".44" />
+      <stop offset="1" stop-color="#ff4fa0" stop-opacity=".06" />
+    </linearGradient>
+    <linearGradient id={`${id}-mountain`} x1="400" y1="227" x2="400" y2="298" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff4fa0" stop-opacity=".65" />
+      <stop offset="1" stop-color="#9d80ff" stop-opacity=".2" />
+    </linearGradient>
+    <linearGradient id={`${id}-fade`} x1="0" x2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0" />
+      <stop offset=".14" stop-color="white" />
+      <stop offset=".86" stop-color="white" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id={`${id}-hardware`} x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#241e43" />
+      <stop offset="1" stop-color="#100d21" />
+    </linearGradient>
+    <filter id={`${id}-glow`} x="-40%" y="-100%" width="180%" height="300%">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+    <filter id={`${id}-sun-glow`} x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22" />
+    </filter>
+    <clipPath id={`${id}-sun-clip`}>
+      <circle cx="400" cy="207" r="104" />
+    </clipPath>
+    <mask id={`${id}-edge-mask`}>
+      <rect width="800" height="600" fill={ref('fade')} />
+    </mask>
+  </defs>
+
+  <rect width="800" height="600" fill={ref('atmosphere')} />
+  <g fill="#b7a9e7">
+    {stars.map(([cx, cy, r]) => <circle cx={cx} cy={cy} r={r} opacity=".55" />)}
+  </g>
+  <path d="M651 59h16m-8-8v16M88 78h14m-7-7v14" stroke="#9d80ff" stroke-opacity=".45" stroke-width=".75" />
+  <circle cx="400" cy="207" r="105" fill="#ff4fa0" opacity=".15" filter={ref('sun-glow')} />
+  <g clip-path={ref('sun-clip')} fill={ref('sun')}>
+    <path d="M290 101h220v92H290zM290 197h220v13H290zM290 215h220v12H290zM290 233h220v11H290zM290 251h220v10H290zM290 269h220v9H290zM290 287h220v8H290z" />
+  </g>
+
+  <g mask={ref('edge-mask')}>
+    <path d="m-15 295 80-31 51 10 54-38 62 26 39-11 46 34 47-14 38 24 56-26 45 9 55-52 35 27 55-19 71 36 44-8 47 33" fill="#141023" stroke={ref('mountain')} stroke-width="1.3" />
+    <path d="m65 264 20 30m85-58-18 59m18-59 52 59m49-44-10 44m286-69-20 69m20-69 48 69m42-61-31 61m31-61 32 61" stroke="#9d80ff" stroke-opacity=".2" />
+    <path d="M0 297h800" stroke="#ff4fa0" stroke-opacity=".5" />
+    <path d="M0 297h800" stroke="#ff4fa0" stroke-width="4" opacity=".25" filter={ref('glow')} />
+    <g stroke={ref('ground')} stroke-width=".8">
+      {gridRows.map((y) => <path d={`M0 ${y}H800`} />)}
+      {gridEnds.map((x) => <path d={`M400 292  ${x} 600`} />)}
+    </g>
+  </g>
+
+  <g stroke="#9d80ff" stroke-width="1.2" stroke-linejoin="round">
+    <path d="m144 389 80-42 88 43-80 45z" fill="#9d80ff" opacity=".07" stroke="none" />
+    <path d="m167 271 59-28 63 31-59 30z" fill="#241c3a" />
+    <path d="M167 271v109l63 34V304z" fill="#17132a" />
+    <path d="M230 304v110l59-31V274z" fill="#100d21" />
+    <path d="m167 307 63 33 59-30m-122 43 63 33 59-30" stroke-opacity=".5" />
+    <path d="m180 291 34 18m-34 26 34 18m-34 27 34 18" stroke="#6de5f2" stroke-opacity=".65" />
+    <path d="m246 308 26-13m-26 49 26-13m-26 59 26-13" stroke-opacity=".4" />
+    <path d="m180 300 16 9m-16 35 16 9m-16 36 16 9" stroke-opacity=".4" />
+  </g>
+  <g fill="#6de5f2">
+    <circle cx="216" cy="325" r="2" />
+    <circle cx="216" cy="369" r="2" />
+    <circle cx="216" cy="405" r="2" />
+  </g>
+
+  <g stroke="#9d80ff" stroke-width="1.2">
+    <ellipse cx="586" cy="395" rx="62" ry="22" fill="#9d80ff" opacity=".07" stroke="none" />
+    <path d="M542 285v89c0 12 20 22 44 22s44-10 44-22v-89" fill={ref('hardware')} />
+    <ellipse cx="586" cy="285" rx="44" ry="20" fill="#241b3b" />
+    <ellipse cx="586" cy="285" rx="31" ry="12" stroke-opacity=".35" />
+    <path d="M542 314c0 12 20 22 44 22s44-10 44-22M542 344c0 12 20 22 44 22s44-10 44-22" />
+    <path d="M554 317v8m0 22v8m0 22v8" stroke="#6de5f2" stroke-width="2" />
+    <path d="M620 298v77" stroke-opacity=".25" />
+  </g>
+
+  <path d="m231 420 67 35h38l18-22 17 45 27-96 28 119 27-65 17 19h39l77-45" stroke="#6de5f2" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".2" filter={ref('glow')} />
+  <path class="signal-trace" d="m231 420 67 35h38l18-22 17 45 27-96 28 119 27-65 17 19h39l77-45" stroke="#6de5f2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <g fill="#100d21" stroke="#6de5f2" stroke-width="1.5">
+    <circle cx="231" cy="420" r="4" />
+    <circle cx="586" cy="410" r="4" />
+  </g>
+  <g stroke="#9d80ff" stroke-opacity=".4" stroke-width=".8">
+    <path d="M113 242v-13h13m548 0h13v13M113 455v13h13m548 0h13v-13" />
+    <path d="M393 340h14m-7-7v14M393 545h14m-7-7v14" />
+  </g>
+</svg>
+
+<style>
+  .signal-landscape {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+</style>

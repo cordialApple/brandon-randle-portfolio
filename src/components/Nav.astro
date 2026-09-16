@@ -3,10 +3,11 @@ interface Props { section: "home" | "work" | "contact" }
 const { section } = Astro.props;
 ---
 <header class="site-header">
-  <a class="brand" href="/" aria-label="Brandon Randle, home"><span class="tick" aria-hidden="true"></span>Brandon Randle</a>
+  <a class="brand" href="/" aria-label="Brandon Randle, home"><svg class="brand-mark" viewBox="0 0 36 32" fill="none" aria-hidden="true"><path d="M2 23L10 9L18 23L26 9L34 23" stroke="currentColor" stroke-width="2.5"/><path d="M8 28H28" stroke="currentColor" opacity=".5"/></svg><span>Brandon<span class="brand-surname"> Randle</span><span class="pink">.</span></span></a>
+  <span class="header-status"><span class="status-dot" aria-hidden="true"></span>Open for Summer 2027</span>
   <nav aria-label="main navigation">
     <a href="/work/" aria-current={section === "work" ? "page" : undefined}>Work</a>
     <a href="/contact/" aria-current={section === "contact" ? "page" : undefined}>Contact</a>
-    <a class="resume-link" href="/resume.pdf">Resume <span aria-hidden="true">↗</span><span class="sr-only"> (PDF)</span></a>
+    <a class="resume-link" href="/Brandon_Randle_SWE.docx">Résumé <span aria-hidden="true">↗</span><span class="sr-only"> (DOCX)</span></a>
   </nav>
 </header>
