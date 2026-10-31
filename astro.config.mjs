@@ -5,5 +5,5 @@ export default defineConfig({
   site: 'https://brandon-randle-portfolio.pages.dev',
   output: 'static',
   prefetch: { prefetchAll: true, defaultStrategy: 'viewport' },
-  integrations: [sitemap()],
+  integrations: [sitemap({ filter: (page) => !page.includes('/lab/') })],
 });

@@ -1,0 +1,71 @@
+---
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>caustics lab</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      .hud {
+        position: fixed; left: 12px; bottom: 12px; color: #9ad;
+        font: 12px/1.5 ui-monospace, monospace; user-select: none;
+        text-shadow: 0 1px 2px #000;
+      }
+      .hud button {
+        background: #141020; color: #9ad; border: 1px solid #443;
+        font: inherit; padding: 2px 8px; cursor: pointer;
+      }
+      #fallback {
+        display: none; position: fixed; inset: 0; color: #ccc;
+        font: 14px system-ui; place-items: center; text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div class="hud">
+      <div id="glinfo"></div>
+      <div id="stats"></div>
+      <div>geometry: <span id="geocheck">…</span></div>
+      <div>probe: <span id="probe">—</span></div>
+      <button id="bench">bench 300f</button>
+      <button id="probebtn">probe brightness</button>
+      <button id="dispose">dispose</button>
+    </div>
+    <div id="fallback">caustics lab requires WebGL2 — unavailable in this browser.</div>
+    <script>
+      import { initCausticsLab } from "../../scripts/caustics/main";
+      import { makeGemGeometry, verifyGemGeometry } from "../../scripts/caustics/gem";
+
+      const canvas = document.getElementById("view") as HTMLCanvasElement;
+      const resParam = parseInt(
+        new URLSearchParams(location.search).get("res") ?? "",
+        10,
+      );
+      const geoCheck = verifyGemGeometry(makeGemGeometry());
+      document.getElementById("geocheck")!.textContent =
+        geoCheck.invertedFaces === 0 && geoCheck.openEdges === 0
+          ? "ok (outward, closed)"
+          : `FAILED ${JSON.stringify(geoCheck)}`;
+      const lab = initCausticsLab(canvas, {
+        solveRes: Number.isFinite(resParam)
+          ? Math.min(Math.max(resParam, 64), 1024)
+          : 256,
+        onUnsupported: () => {
+          document.getElementById("fallback")!.style.display = "grid";
+          canvas.style.display = "none";
+        },
+      });
+      if (lab) {
+        document.getElementById("dispose")!.addEventListener("click", () => {
+          lab.dispose();
+          document.getElementById("stats")!.textContent = "disposed";
+        });
+      }
+    </script>
+  </body>
+</html>
