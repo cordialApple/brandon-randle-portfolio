@@ -1,0 +1,12 @@
+---
+---
+
+<div class="gem-layer" aria-hidden="true">
+  <canvas class="gem-canvas"></canvas>
+  <div class="gem-static"></div>
+</div>
+<script>
+  import { initSiteCaustics } from "../scripts/caustics/site";
+  const layer = document.querySelector<HTMLElement>(".gem-layer");
+  if (layer) initSiteCaustics(layer);
+</script>

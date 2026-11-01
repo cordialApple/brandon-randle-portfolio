@@ -195,17 +195,21 @@ export function makeSplatMaterial(): THREE.ShaderMaterial {
   });
 }
 
-export function makeReceiverMaterial(): THREE.ShaderMaterial {
+export function makeReceiverMaterial(gemCount = 1): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: {
       baseColor: { value: new THREE.Color(0x0d091a) },
       causticTex: { value: null },
       receiverRes: { value: new THREE.Vector2(1, 1) },
       lightPos: { value: new THREE.Vector3() },
-      lightViewMatrix: { value: new THREE.Matrix4() },
-      lightProjMatrix: { value: new THREE.Matrix4() },
-      lightDepthTex: { value: null },
-      lightHasProj: { value: 0 },
+      lightViewMatrix: {
+        value: Array.from({ length: gemCount }, () => new THREE.Matrix4()),
+      },
+      lightProjMatrix: {
+        value: Array.from({ length: gemCount }, () => new THREE.Matrix4()),
+      },
+      lightDepthTex: { value: new Array<THREE.Texture | null>(gemCount).fill(null) },
+      lightActive: { value: new Array<number>(gemCount).fill(0) },
       directStrength: { value: 1.0 },
       causticStrength: { value: 1.0 },
     },
@@ -222,10 +226,10 @@ export function makeReceiverMaterial(): THREE.ShaderMaterial {
       uniform sampler2D causticTex;
       uniform vec2 receiverRes;
       uniform vec3 lightPos;
-      uniform mat4 lightViewMatrix;
-      uniform mat4 lightProjMatrix;
-      uniform sampler2D lightDepthTex;
-      uniform float lightHasProj;
+      uniform mat4 lightViewMatrix[${gemCount}];
+      uniform mat4 lightProjMatrix[${gemCount}];
+      uniform sampler2D lightDepthTex[${gemCount}];
+      uniform int lightActive[${gemCount}];
       uniform float directStrength;
       uniform float causticStrength;
       void main() {
@@ -233,17 +237,18 @@ export function makeReceiverMaterial(): THREE.ShaderMaterial {
         float d = length(L);
         L /= d;
         float shadow = 1.0;
-        if (lightHasProj > 0.5) {
-          vec4 lp = lightProjMatrix * lightViewMatrix * vec4(vWorldPos, 1.0);
-          if (lp.w > 0.0) {
-            vec3 uvd = lp.xyz / lp.w * 0.5 + 0.5;
-            if (uvd.x > 0.0 && uvd.x < 1.0 && uvd.y > 0.0 && uvd.y < 1.0 &&
-                uvd.z > 0.0 && uvd.z < 1.0) {
-              float occluder = texture2D(lightDepthTex, uvd.xy).x;
-              if (occluder < 1.0 && occluder < uvd.z - 0.002) shadow = 0.0;
+        ${Array.from({ length: gemCount }, (_, i) => `
+        if (lightActive[${i}] != 0) {
+          vec4 lp${i} = lightProjMatrix[${i}] * lightViewMatrix[${i}] * vec4(vWorldPos, 1.0);
+          if (lp${i}.w > 0.0) {
+            vec3 uvd${i} = lp${i}.xyz / lp${i}.w * 0.5 + 0.5;
+            if (uvd${i}.x > 0.0 && uvd${i}.x < 1.0 && uvd${i}.y > 0.0 && uvd${i}.y < 1.0 &&
+                uvd${i}.z > 0.0 && uvd${i}.z < 1.0) {
+              float occluder${i} = texture2D(lightDepthTex[${i}], uvd${i}.xy).x;
+              if (occluder${i} < 1.0 && occluder${i} < uvd${i}.z - 0.002) shadow = 0.0;
             }
           }
-        }
+        }`).join("\n")}
         float direct = directStrength * max(L.z, 0.0) * shadow / (d * d);
         vec2 uv = vWorldPos.xy / receiverRes;
         vec3 caustic = texture2D(causticTex, uv).rgb * causticStrength;
@@ -340,6 +345,32 @@ export function makeDisplayMaterial(): THREE.ShaderMaterial {
     `,
     depthTest: false,
     depthWrite: false,
+  });
+}
+
+export function makeOverlayMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      tex: { value: null },
+      gain: { value: 1.0 },
+    },
+    vertexShader: fullscreenVertexShader,
+    fragmentShader: /* glsl */ `
+      varying vec2 vUv;
+      uniform sampler2D tex;
+      uniform float gain;
+      void main() {
+        vec3 c = texture2D(tex, vUv).rgb * gain;
+        gl_FragColor = vec4(c, 0.0);
+        #include <colorspace_fragment>
+      }
+    `,
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
+    depthTest: false,
+    depthWrite: false,
+    transparent: true,
   });
 }
 
