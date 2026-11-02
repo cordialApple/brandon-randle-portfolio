@@ -395,6 +395,7 @@ export function initSiteCaustics(
   const tick = (now: number) => {
     raf = 0;
     if (disposed || !scene) return;
+    if (controls?.advance(now)) poseDirty = true;
     if (poseDirty) {
       poseDirty = false;
       layoutGems();
@@ -458,7 +459,7 @@ export function initSiteCaustics(
         bench = null;
       }
     }
-    if (!disposed && (now - lastActive < 1600 || scene.dirty || bench)) {
+    if (!disposed && (now - lastActive < 1600 || scene.dirty || bench || controls?.animating)) {
       raf = requestAnimationFrame(tick);
     }
   };
@@ -546,7 +547,7 @@ export function initSiteCaustics(
     controls = createGemControls(anchors.map(a => GEM_LABELS[a.cut]), poses, () => {
       poseDirty = true;
       wake();
-    });
+    }, nowFn);
     layoutGems();
     const focus = measure().find(p => p && p.docY >= scrollY && p.docY < scrollY + scene!.H);
     scene.setLight(

@@ -242,6 +242,50 @@ function depsFor(loader?: () => Promise<unknown>, clock?: { t: number }) {
 
 import { initSiteCaustics } from "../src/scripts/caustics/site.ts";
 
+test("elastic return can be grabbed mid-flight and settles without losing rotation", async (t) => {
+  const w = makeWorld();
+  const clock = { t: 0 };
+  const stop = initSiteCaustics(w.root as never, depsFor(undefined, clock));
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  w.step(0);
+  const s = FakeScene.created[0];
+  const overlay = (w.doc.body as El).children.find(e => e.className === "gem-interactions")!;
+  const [move, rotate] = overlay.children[1].children;
+  const center = () => [...s.calls.setGemCenter.filter(c => c[0] === 0).at(-1)!];
+  const initial = center();
+  const pointer = (x: number) => ({ pointerId: 2, button: 0, clientX: x, clientY: 100, timeStamp: clock.t, preventDefault() {} });
+  const frame = (time: number) => { clock.t = time; w.step(time); };
+  clock.t = 10;
+  move.dispatch("pointerdown", pointer(100));
+  clock.t = 50;
+  move.dispatch("pointermove", pointer(300));
+  frame(50);
+  assert.ok(center()[1] > initial[1] + 80);
+  clock.t = 60;
+  move.dispatch("pointerup", pointer(300));
+  frame(110);
+  const interrupted = center();
+  move.dispatch("pointerdown", pointer(300));
+  frame(180);
+  assert.deepEqual(center(), interrupted, "re-grab holds displayed position without jump");
+  clock.t = 200;
+  move.dispatch("pointermove", pointer(260));
+  frame(200);
+  assert.ok(center()[1] < interrupted[1]);
+  clock.t = 210;
+  move.dispatch("pointerup", pointer(260));
+  rotate.dispatch("keydown", { key: "ArrowRight", preventDefault() {} });
+  for (let time = 230; time <= 2200; time += 20) frame(time);
+  assert.deepEqual(center(), initial, "release restores original anchor exactly");
+  assert.notEqual(s.rotations[0][1], 0, "rotation persists after translation settles");
+  frame(4000);
+  const solves = s.calls.solve;
+  frame(4020);
+  assert.equal(s.calls.solve, solves, "settled gems stop rendering");
+});
+
 test("gem controls move, rotate, cancel, reset, and release on teardown", async (t) => {
   const w = makeWorld();
   const stop = initSiteCaustics(w.root as never, depsFor());
@@ -261,8 +305,8 @@ test("gem controls move, rotate, cancel, reset, and release on teardown", async 
   move.dispatch("pointerdown", pointer(100, 100));
   move.dispatch("pointermove", pointer(140, 120));
   w.step(16);
-  assert.equal(center()[1], initial[1] + 40);
-  assert.equal(center()[2], initial[2] - 20);
+  assert.ok(center()[1] > initial[1] && center()[1] < initial[1] + 40);
+  assert.ok(center()[2] < initial[2] && center()[2] > initial[2] - 20);
   const lightCalls = s.calls.setLight;
   w.win.dispatch("pointermove", pointer(140, 120));
   assert.equal(s.calls.setLight, lightCalls, "light held while grabbing gem");

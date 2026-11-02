@@ -8,7 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "node --experimental-strip-types --test scripts/caustics-frustum.test.mjs scripts/caustics-geometry.test.mts scripts/caustics-site.test.mts scripts/caustics-site-lifecycle.test.mts scripts/caustics-splat.test.mts"
+    "test": "node --experimental-strip-types --test scripts/caustics-frustum.test.mjs scripts/caustics-geometry.test.mts scripts/caustics-site.test.mts scripts/caustics-site-lifecycle.test.mts scripts/caustics-splat.test.mts scripts/caustics-spring.test.mts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
