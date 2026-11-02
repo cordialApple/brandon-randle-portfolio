@@ -325,7 +325,7 @@ export function initSiteCaustics(
       if (bench.frames > bench.warm) {
         bench.intervals.push(dt);
       }
-      if (benchStatus) {
+      if (benchStatus && bench.frames % 30 === 0) {
         benchStatus.textContent = `${bench.intervals.length}/${bench.n}`;
       }
       if (bench.intervals.length >= bench.n) {
