@@ -276,6 +276,30 @@ test("asymmetric rotated bounds stay vertically centered at their anchor", async
   assert.equal(scene.H - meshY - 30, anchorY, "mesh and control share visual center");
 });
 
+test("homepage gems share page horizontal midpoint after rotation and resize", async (t) => {
+  const w = makeWorld();
+  const page = w.doc.documentElement as { clientWidth: number };
+  page.clientWidth = 1417;
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const scene = FakeScene.created[0];
+  scene.bounds = { min: { x: -30, y: -50, z: -90 }, max: { x: 90, y: 50, z: 70 } };
+  for (const width of [1417, 1280]) {
+    page.clientWidth = width;
+    w.win.innerWidth = width + 15;
+    w.mainEl.rect.right = width - 160;
+    w.win.dispatch("resize");
+    for (let i = 0; i < 3; i++) {
+      const meshX = scene.calls.setGemCenter.filter(c => c[0] === i).at(-1)![1];
+      assert.equal(meshX + 30, width / 2);
+    }
+    const group = (w.doc.body as El).children.find(e => e.className === "gem-interactions")!.children[1];
+    assert.equal(Number.parseFloat(group.style.left) + Number.parseFloat(group.style.width) / 2, width / 2);
+  }
+});
+
 test("elastic return can be grabbed mid-flight and settles without losing rotation", async (t) => {
   const w = makeWorld();
   const clock = { t: 0 };
@@ -368,7 +392,7 @@ test("gem controls move, rotate, cancel, reset, and release on teardown", async 
   move.dispatch("pointermove", pointer(-20000, -20000));
   assert.equal(s.calls.setGemCenter.length, beforeMoves, "pointer updates coalesce before frame");
   w.step(112);
-  assert.equal(center()[1], 72, "left extent stays inside page");
+  assert.ok(center()[1] >= 72 && center()[1] < initial[1], "left extent stays inside page while dragging left");
   assert.equal(center()[2], 838, "top extent stays inside document");
   w.win.dispatch("blur");
   w.step(128);

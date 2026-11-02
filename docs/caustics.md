@@ -105,3 +105,9 @@ Captured user's live rotations through Edge's debugger without reloading preview
 Visible rotated bounds now center vertically within each existing anchor space. Desktop homepage mint/pink scale 1.5×; cyan size unchanged. Tight-gutter and static fallbacks retain prior sizing. At 1432px viewport: mint bounds `134.019×67.8772` → `201.029×101.816` CSS px; pink `104.172×62.985` → `156.259×94.4775`. Both dimensions grow 50%; all three vertical centers match measured section midpoints. Browser rotation/reset restores identical bounds; no shader errors.
 
 41 tests pass, including asymmetric visual centering and saved-pose reset. Typecheck and nine-route build pass. Ray count, solve resolution, shader passes unchanged; no new foreground timing collected for enlarged poses. Earlier timings above apply to their recorded versions.
+
+## Page centerline — 2026-11-01
+
+All three homepage gems now rest on the page's vertical centerline: visible X midpoint equals half the document client width. Rotated bounds compensate for asymmetric geometry; elastic drag returns to this centerline. Existing section heights, saved rotations, sizes, and other routes retain their placements. Static homepage accents share the same horizontal midpoint.
+
+42 tests pass, including all three mesh centers and control alignment across asymmetric bounds and resize. Browser checks at 1417px content width place cyan, mint, and pink centers at 708.5px (within 0.01px DOM rounding). Typecheck and build pass.

@@ -175,6 +175,7 @@ export function initSiteCaustics(
   const canvas = root.querySelector<HTMLCanvasElement>(".gem-canvas")!;
   const staticLayer = root.querySelector<HTMLElement>(".gem-static")!;
   const anchors = anchorsFor(location.pathname);
+  const centerGems = location.pathname === "/";
   const mainEl = document.querySelector<HTMLElement>("main");
   const motionMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
   const coarseMQ = window.matchMedia("(pointer: coarse)");
@@ -267,7 +268,7 @@ export function initSiteCaustics(
         bottom: afterRect.top,
       };
     };
-    return anchors.map((a) => {
+    const placements = anchors.map((a) => {
       if (window.innerWidth >= 1100 && a.zone) {
         let space: GemSpace | null = null;
         if (a.zone === "hero") {
@@ -304,6 +305,10 @@ export function initSiteCaustics(
       );
       return marginGemPlacement(a.edge, docY, contentLeft, contentRight, vw);
     });
+    if (centerGems) {
+      for (const p of placements) if (p) p.x = vw / 2;
+    }
+    return placements;
   };
 
   const drawStatic = () => {
@@ -357,17 +362,18 @@ export function initSiteCaustics(
       scene!.setGemSize(i, p.r);
       scene!.setGemRotation(i, pose.rx, pose.ry);
       const bounds = scene!.gemBounds(i);
+      const restX = p.x - (centerGems ? (bounds.min.x + bounds.max.x) / 2 : 0);
       const midY = (bounds.min.y + bounds.max.y) / 2;
       const halfHeight = (bounds.max.y - bounds.min.y) / 2;
       const x = Math.max(
         GEM_EDGE_PADDING - bounds.min.x,
-        Math.min(scene!.W - GEM_EDGE_PADDING - bounds.max.x, p.x + pose.x),
+        Math.min(scene!.W - GEM_EDGE_PADDING - bounds.max.x, restX + pose.x),
       );
       const docY = Math.max(
         GEM_EDGE_PADDING + halfHeight,
         Math.min(document.documentElement.scrollHeight - GEM_EDGE_PADDING - halfHeight, p.docY + pose.y),
       );
-      pose.x = x - p.x;
+      pose.x = x - restX;
       pose.y = docY - p.docY;
       const vpY = docY - scrollY;
       const r = scene!.gemRadius(i);
