@@ -1,0 +1,678 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+class T {
+  listeners = new Map<string, Set<EventListener>>();
+  addEventListener(t: string, fn: EventListener) {
+    if (!this.listeners.has(t)) this.listeners.set(t, new Set());
+    this.listeners.get(t)!.add(fn);
+  }
+  removeEventListener(t: string, fn: EventListener) {
+    this.listeners.get(t)?.delete(fn);
+  }
+  dispatch(t: string, e: Record<string, unknown> = {}) {
+    this.listeners
+      .get(t)
+      ?.forEach((f) => f({ type: t, ...e } as Event));
+  }
+  count(t: string) {
+    return this.listeners.get(t)?.size ?? 0;
+  }
+}
+
+class El extends T {
+  children: El[] = [];
+  dataset: Record<string, string> = {};
+  style: Record<string, string> = {};
+  classList = { add: () => {} };
+  rect = { top: 0, left: 0, right: 0, height: 100 };
+  textContent = "";
+  className = "";
+  hidden = false;
+  captured: number | null = null;
+  setPointerCapture(id: number) { this.captured = id; }
+  hasPointerCapture(id: number) { return this.captured === id; }
+  releasePointerCapture() { this.captured = null; }
+  focus() {}
+  private inner = "";
+  set innerHTML(v: string) {
+    this.inner = v;
+    if (v === "") this.children = [];
+  }
+  get innerHTML() {
+    return this.inner;
+  }
+  appendChild(c: El) {
+    this.children.push(c);
+    return c;
+  }
+  append(...cs: El[]) {
+    this.children.push(...cs);
+  }
+  removed = false;
+  remove() { this.removed = true; }
+  setAttribute() {}
+  addEventListener(t: string, fn: EventListener) {
+    super.addEventListener(t, fn);
+  }
+  getBoundingClientRect() {
+    return this.rect;
+  }
+  querySelector(_sel?: string): El | null {
+    return null;
+  }
+}
+
+class FakeScene {
+  static created: FakeScene[] = [];
+  static fail = false;
+  opts: Record<string, unknown>;
+  gems: { visible: boolean }[];
+  dirty = true;
+  W = 0;
+  H = 0;
+  solveRes: number;
+  params = { lightHeight: 140, directStrength: 0, causticStrength: 0, splatSize: 0 };
+  renderer = {
+    info: { autoReset: true, reset: () => {}, render: { calls: 1 } },
+    getContext: () => ({ getExtension: () => ({ loseContext() {} }) }),
+  };
+  calls = {
+    solve: 0, composite: 0, setLight: 0, disposed: 0,
+    setSolveRes: [] as number[], setGemVisible: [] as unknown[][],
+    setGemSize: [] as number[][], setGemCenter: [] as number[][],
+    resize: [] as number[][],
+  };
+  static create(opts: Record<string, unknown>) {
+    if (FakeScene.fail) return null;
+    const s = new FakeScene(opts);
+    FakeScene.created.push(s);
+    return s;
+  }
+  constructor(opts: Record<string, unknown>) {
+    this.opts = opts;
+    this.solveRes = (opts.solveRes as number) ?? 128;
+    this.gems = (opts.gems as unknown[]).map(() => ({ visible: true }));
+  }
+  setLight() { this.calls.setLight++; this.dirty = true; }
+  setGemVisible(i: number, v: boolean) {
+    this.calls.setGemVisible.push([i, v]);
+    this.gems[i].visible = v;
+    this.dirty = true;
+  }
+  setGemCenter(i: number, x: number, y: number, z: number) {
+    this.calls.setGemCenter.push([i, x, y, z]);
+    this.dirty = true;
+  }
+  setGemSize(i: number, s: number) {
+    this.calls.setGemSize.push([i, s]);
+    this.dirty = true;
+  }
+  rotations: number[][] = [];
+  setGemRotation(i: number, x: number, y: number) { this.rotations[i] = [x, y]; }
+  bounds = { min: { x: -60, y: -50, z: -90 }, max: { x: 60, y: 50, z: 70 } };
+  gemBounds() { return this.bounds; }
+  gemRadius() { return 90; }
+  setSolveRes(r: number) { this.calls.setSolveRes.push(r); this.dirty = true; }
+  resize(w: number, h: number) { this.calls.resize.push([w, h]); this.W = w; this.H = h; this.dirty = true; }
+  solve() { this.calls.solve++; }
+  composite() { this.calls.composite++; }
+  dispose() { this.calls.disposed++; }
+}
+
+interface World {
+  win: T & Record<string, unknown>;
+  doc: T & Record<string, unknown>;
+  canvas: El;
+  staticLayer: El;
+  root: El;
+  mainEl: El;
+  motionMQ: { matches: boolean } & T;
+  coarseMQ: { matches: boolean } & T;
+  rafQ: (null | ((n: number) => void))[];
+  idleQ: (() => void)[];
+  step: (now: number, n?: number) => void;
+  flush: () => Promise<void>;
+  cleanup: () => void;
+}
+
+function makeWorld(width = 1432, gutter = 160): World {
+  FakeScene.created = [];
+  const win = new T() as World["win"];
+  const doc = new T() as World["doc"];
+  const canvas = new El();
+  const staticLayer = new El();
+  const mainEl = new El();
+  mainEl.rect = { top: 0, left: gutter, right: width - gutter, height: 4000 };
+  const anchorEls: Record<string, El> = {};
+  for (const s of [".hero h1", ".context-strip", ".about-strip"]) {
+    anchorEls[s] = new El();
+  }
+  anchorEls[".hero h1"].rect = { top: 200, left: 100, right: 900, height: 120 };
+  anchorEls[".context-strip"].rect = { top: 600, left: gutter, right: width - gutter, height: 60 };
+  anchorEls[".about-strip"].rect = { top: 1900, left: gutter, right: width - gutter, height: 300 };
+  const root = new El();
+  root.querySelector = (sel: string) =>
+    sel === ".gem-canvas" ? canvas : staticLayer;
+  const motionMQ = new T() as World["motionMQ"];
+  motionMQ.matches = false;
+  const coarseMQ = new T() as World["coarseMQ"];
+  coarseMQ.matches = false;
+  const rafQ: World["rafQ"] = [];
+  const idleQ: World["idleQ"] = [];
+
+  Object.assign(win, {
+    innerWidth: width,
+    innerHeight: 900,
+    scrollY: 0,
+    devicePixelRatio: 1,
+    matchMedia: (q: string) =>
+      q.includes("reduced-motion") ? motionMQ : coarseMQ,
+    requestAnimationFrame: (cb: (n: number) => void) => {
+      rafQ.push(cb);
+      return rafQ.length;
+    },
+    cancelAnimationFrame: (id: number) => {
+      rafQ[id - 1] = null;
+    },
+    requestIdleCallback: (cb: () => void) => {
+      idleQ.push(cb);
+      return idleQ.length;
+    },
+    cancelIdleCallback: (id: number) => {
+      idleQ[id - 1] = null as never;
+    },
+  });
+  Object.assign(doc, {
+    hidden: false,
+    readyState: "complete",
+    body: new El(),
+    documentElement: { scrollHeight: 4000 },
+    fonts: { ready: { then: () => {} } },
+    querySelector: (sel: string) =>
+      sel === "main" ? mainEl : (anchorEls[sel] ?? null),
+    createElement: () => new El(),
+    createElementNS: () => new El(),
+  });
+
+  const g = globalThis as Record<string, unknown>;
+  const saved = {
+    window: g.window, document: g.document, location: g.location,
+    ResizeObserver: g.ResizeObserver,
+    requestAnimationFrame: g.requestAnimationFrame,
+    cancelAnimationFrame: g.cancelAnimationFrame,
+  };
+  g.window = win;
+  g.document = doc;
+  g.location = { pathname: "/", search: "" };
+  g.requestAnimationFrame = win.requestAnimationFrame;
+  g.cancelAnimationFrame = win.cancelAnimationFrame;
+  g.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+  };
+
+  return {
+    win, doc, canvas, staticLayer, root, mainEl, motionMQ, coarseMQ, rafQ, idleQ,
+    step(now, n = 1) {
+      for (let k = 0; k < n; k++) {
+        const q = rafQ.splice(0);
+        now += 0;
+        q.forEach((cb) => cb && cb(now));
+      }
+    },
+    async flush() {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    },
+    cleanup() {
+      Object.assign(g, saved);
+    },
+  };
+}
+
+function depsFor(loader?: () => Promise<unknown>, clock?: { t: number }) {
+  return {
+    loadCore:
+      loader ??
+      (async () => ({ CausticsScene: FakeScene as never })),
+    ...(clock ? { now: () => clock.t } : {}),
+  } as never;
+}
+
+import { initSiteCaustics } from "../src/scripts/caustics/site.ts";
+import { createGemControls } from "../src/scripts/caustics/controls.ts";
+
+test("reset restores saved rotation after controls restart", (t) => {
+  const w = makeWorld();
+  t.after(() => w.cleanup());
+  const defaults = [{ x: 0, y: 0, rx: 1.5, ry: -0.876 }];
+  const poses = [{ x: 40, y: 20, rx: 2, ry: 3 }];
+  const controls = createGemControls(["pink"], poses, () => {}, () => 0, defaults);
+  t.after(() => controls.dispose());
+  const group = (w.doc.body as El).children[0].children[1];
+  group.children[0].dispatch("keydown", { key: "Home", preventDefault() {} });
+  assert.deepEqual(poses, defaults);
+  poses[0].rx += 1;
+  group.children[1].dispatch("dblclick");
+  assert.deepEqual(poses, defaults);
+});
+
+test("asymmetric rotated bounds stay vertically centered at their anchor", async (t) => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const scene = FakeScene.created[0];
+  const group = (w.doc.body as El).children.find(e => e.className === "gem-interactions")!.children[1];
+  const centerY = () => Number.parseFloat(group.style.top) + Number.parseFloat(group.style.height) / 2;
+  const anchorY = centerY();
+  scene.bounds = { min: { x: -60, y: -20, z: -90 }, max: { x: 60, y: 80, z: 70 } };
+  w.win.dispatch("resize");
+  assert.equal(centerY(), anchorY);
+  const meshY = scene.calls.setGemCenter.filter(c => c[0] === 0).at(-1)![2];
+  assert.equal(scene.H - meshY - 30, anchorY, "mesh and control share visual center");
+});
+
+test("homepage gems share page horizontal midpoint after rotation and resize", async (t) => {
+  const w = makeWorld();
+  const page = w.doc.documentElement as { clientWidth: number };
+  page.clientWidth = 1417;
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const scene = FakeScene.created[0];
+  scene.bounds = { min: { x: -30, y: -50, z: -90 }, max: { x: 90, y: 50, z: 70 } };
+  for (const width of [1417, 1280]) {
+    page.clientWidth = width;
+    w.win.innerWidth = width + 15;
+    w.mainEl.rect.right = width - 160;
+    w.win.dispatch("resize");
+    for (let i = 0; i < 3; i++) {
+      const meshX = scene.calls.setGemCenter.filter(c => c[0] === i).at(-1)![1];
+      assert.equal(meshX + 30, width / 2);
+    }
+    const group = (w.doc.body as El).children.find(e => e.className === "gem-interactions")!.children[1];
+    assert.equal(Number.parseFloat(group.style.left) + Number.parseFloat(group.style.width) / 2, width / 2);
+  }
+});
+
+test("elastic return can be grabbed mid-flight and settles without losing rotation", async (t) => {
+  const w = makeWorld();
+  const clock = { t: 0 };
+  const stop = initSiteCaustics(w.root as never, depsFor(undefined, clock));
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  w.step(0);
+  const s = FakeScene.created[0];
+  const overlay = (w.doc.body as El).children.find(e => e.className === "gem-interactions")!;
+  const [move, rotate] = overlay.children[1].children;
+  const center = () => [...s.calls.setGemCenter.filter(c => c[0] === 0).at(-1)!];
+  const initial = center();
+  const pointer = (x: number) => ({ pointerId: 2, button: 0, clientX: x, clientY: 100, timeStamp: clock.t, preventDefault() {} });
+  const frame = (time: number) => { clock.t = time; w.step(time); };
+  clock.t = 10;
+  move.dispatch("pointerdown", pointer(100));
+  clock.t = 50;
+  move.dispatch("pointermove", pointer(300));
+  frame(50);
+  assert.ok(center()[1] > initial[1] + 80);
+  clock.t = 60;
+  move.dispatch("pointerup", pointer(300));
+  frame(110);
+  const interrupted = center();
+  move.dispatch("pointerdown", pointer(300));
+  frame(180);
+  assert.deepEqual(center(), interrupted, "re-grab holds displayed position without jump");
+  clock.t = 200;
+  move.dispatch("pointermove", pointer(260));
+  frame(200);
+  assert.ok(center()[1] < interrupted[1]);
+  clock.t = 210;
+  move.dispatch("pointerup", pointer(260));
+  rotate.dispatch("keydown", { key: "ArrowRight", preventDefault() {} });
+  for (let time = 230; time <= 2200; time += 20) frame(time);
+  assert.deepEqual(center(), initial, "release restores original anchor exactly");
+  assert.notEqual(s.rotations[0][1], 0, "rotation persists after translation settles");
+  frame(4000);
+  const solves = s.calls.solve;
+  frame(4020);
+  assert.equal(s.calls.solve, solves, "settled gems stop rendering");
+});
+
+test("gem controls move, rotate, cancel, reset, and release on teardown", async (t) => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const s = FakeScene.created[0];
+  const overlay = (w.doc.body as El).children.find(e => e.className === "gem-interactions");
+  assert.ok(overlay, "controls created outside decorative layer");
+  const group = overlay.children[1];
+  const [move, rotate] = group.children;
+  const center = () => s.calls.setGemCenter.filter(c => c[0] === 0).at(-1)!;
+  const initial = [...center()];
+  const initialRotation = [...s.rotations[0]];
+  const pointer = (clientX: number, clientY: number) => ({
+    pointerId: 1, button: 0, clientX, clientY, preventDefault() {},
+  });
+  move.dispatch("pointerdown", pointer(100, 100));
+  move.dispatch("pointermove", pointer(140, 120));
+  w.step(16);
+  assert.ok(center()[1] > initial[1] && center()[1] < initial[1] + 40);
+  assert.ok(center()[2] < initial[2] && center()[2] > initial[2] - 20);
+  const lightCalls = s.calls.setLight;
+  w.win.dispatch("pointermove", pointer(140, 120));
+  assert.equal(s.calls.setLight, lightCalls, "light held while grabbing gem");
+  move.dispatch("pointerup", pointer(140, 120));
+  rotate.dispatch("pointerdown", pointer(140, 120));
+  rotate.dispatch("pointermove", pointer(180, 150));
+  w.step(32);
+  assert.ok(s.rotations[0].every(v => v !== 0));
+  rotate.dispatch("pointercancel", pointer(180, 150));
+  w.step(48);
+  assert.deepEqual(s.rotations[0], initialRotation);
+  move.dispatch("dblclick", { preventDefault() {} });
+  w.step(64);
+  assert.deepEqual(center(), initial);
+  rotate.dispatch("keydown", { key: "ArrowRight", preventDefault() {} });
+  w.step(80);
+  assert.notEqual(s.rotations[0][1], 0);
+  move.dispatch("keydown", { key: "Home", preventDefault() {} });
+  w.step(96);
+  assert.deepEqual(s.rotations[0], initialRotation);
+  move.dispatch("pointerdown", pointer(100, 100));
+  const beforeMoves = s.calls.setGemCenter.length;
+  move.dispatch("pointermove", pointer(-10000, -10000));
+  move.dispatch("pointermove", pointer(-20000, -20000));
+  assert.equal(s.calls.setGemCenter.length, beforeMoves, "pointer updates coalesce before frame");
+  w.step(112);
+  assert.ok(center()[1] >= 72 && center()[1] < initial[1], "left extent stays inside page while dragging left");
+  assert.equal(center()[2], 838, "top extent stays inside document");
+  w.win.dispatch("blur");
+  w.step(128);
+  assert.deepEqual(center(), initial, "blur cancels in-progress drag");
+  move.dispatch("pointerdown", pointer(100, 100));
+  stop();
+  assert.equal(move.captured, null);
+  assert.equal(overlay.removed, true);
+  assert.equal(w.win.count("blur"), 0);
+});
+
+test("boot: lazy start creates scene on idle and goes live", async () => {
+  const w = makeWorld();
+  const { initSiteCaustics } = await import("../src/scripts/caustics/site.ts");
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  assert.equal(w.idleQ.length, 1, "idle scheduled");
+  w.idleQ.shift()!();
+  await w.flush();
+  assert.equal(FakeScene.created.length, 1);
+  assert.equal(w.root.dataset.mode, "live");
+  stop();
+  w.cleanup();
+});
+
+test("pagehide tears down; persisted pageshow reboots a new scene", async () => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  w.idleQ.pop()!();
+  await w.flush();
+  assert.equal(FakeScene.created.length, 1);
+  w.win.dispatch("pagehide");
+  assert.equal(FakeScene.created[0].calls.disposed, 1);
+  assert.equal(w.win.count("pointermove"), 0, "listeners removed");
+  w.win.dispatch("pageshow", { persisted: true });
+  w.idleQ.pop()!();
+  await w.flush();
+  assert.equal(FakeScene.created.length, 2, "new scene after bfcache");
+  assert.ok(w.win.count("pointermove") > 0);
+  stop();
+  w.cleanup();
+});
+
+test("reduced-motion stops to static and resumes on un-reduce", async () => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  w.idleQ.shift()!();
+  await w.flush();
+  w.motionMQ.matches = true;
+  w.motionMQ.dispatch("change");
+  assert.equal(w.root.dataset.mode, "static");
+  assert.equal(FakeScene.created[0].calls.disposed, 1);
+  w.motionMQ.matches = false;
+  w.motionMQ.dispatch("change");
+  await w.flush();
+  assert.equal(FakeScene.created.length, 2);
+  assert.equal(w.root.dataset.mode, "live");
+  stop();
+  w.cleanup();
+});
+
+test("coarse pointer uses static path and never loads core", async () => {
+  const w = makeWorld();
+  w.coarseMQ.matches = true;
+  let loaded = 0;
+  const stop = initSiteCaustics(w.root as never, {
+    loadCore: async () => {
+      loaded++;
+      return { CausticsScene: FakeScene as never };
+    },
+  } as never);
+  await w.flush();
+  assert.equal(loaded, 0);
+  assert.equal(w.root.dataset.mode, "static");
+  w.coarseMQ.matches = false;
+  w.coarseMQ.dispatch("change");
+  await w.flush();
+  assert.equal(loaded, 1);
+  stop();
+  w.cleanup();
+});
+
+test("hidden during async import defers creation until visible", async () => {
+  const w = makeWorld();
+  let resolveMod: (v: unknown) => void = () => {};
+  const stop = initSiteCaustics(w.root as never, {
+    loadCore: () => new Promise((r) => { resolveMod = r; }),
+  } as never);
+  w.idleQ.shift()!();
+  (w.doc as unknown as { hidden: boolean }).hidden = true;
+  w.doc.dispatch("visibilitychange");
+  await w.flush();
+  assert.equal(FakeScene.created.length, 0, "no start while hidden");
+  resolveMod({ CausticsScene: FakeScene as never });
+  await w.flush();
+  assert.equal(FakeScene.created.length, 0, "still hidden");
+  (w.doc as unknown as { hidden: boolean }).hidden = false;
+  w.doc.dispatch("visibilitychange");
+  resolveMod({ CausticsScene: FakeScene as never });
+  await w.flush();
+  await w.flush();
+  assert.equal(FakeScene.created.length, 1);
+  stop();
+  w.cleanup();
+});
+
+test("stale import after teardown does not create or throw", async () => {
+  const w = makeWorld();
+  let resolveMod: (v: unknown) => void = () => {};
+  const stop = initSiteCaustics(w.root as never, {
+    loadCore: () => new Promise((r) => { resolveMod = r; }),
+  } as never);
+  w.idleQ.shift()!();
+  stop();
+  await assert.doesNotReject(async () => {
+    resolveMod({ CausticsScene: FakeScene as never });
+    await w.flush();
+  });
+  assert.equal(FakeScene.created.length, 0);
+  w.cleanup();
+});
+
+test("creation failure falls back to static without throwing", async () => {
+  const w = makeWorld();
+  FakeScene.fail = true;
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  w.idleQ.shift()!();
+  await w.flush();
+  assert.equal(w.root.dataset.mode, "static");
+  FakeScene.fail = false;
+  stop();
+  w.cleanup();
+});
+
+test("context loss latches static until webglcontextrestored", async () => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  w.idleQ.shift()!();
+  await w.flush();
+  w.canvas.dispatch("webglcontextlost", { preventDefault() {} });
+  assert.equal(w.root.dataset.mode, "static");
+  const before = FakeScene.created.length;
+  w.win.dispatch("resize");
+  await w.flush();
+  assert.equal(FakeScene.created.length, before, "no restart on lost ctx");
+  w.canvas.dispatch("webglcontextrestored");
+  await w.flush();
+  assert.equal(FakeScene.created.length, before + 1);
+  stop();
+  w.cleanup();
+});
+
+test("narrow boot inits no GPU; widening revives via resize", async () => {
+  const w = makeWorld(1024, 40);
+  let loaded = 0;
+  const stop = initSiteCaustics(w.root as never, {
+    loadCore: async () => {
+      loaded++;
+      return { CausticsScene: FakeScene as never };
+    },
+  } as never);
+  await w.flush();
+  assert.equal(loaded, 0, "no GPU with no fitting anchor");
+  assert.equal(w.root.dataset.mode, "static");
+  (w.win as unknown as { innerWidth: number }).innerWidth = 1432;
+  w.mainEl.rect.left = 160;
+  w.mainEl.rect.right = 1272;
+  w.win.dispatch("resize");
+  await w.flush();
+  assert.equal(loaded, 1);
+  assert.equal(w.root.dataset.mode, "live");
+  stop();
+  w.cleanup();
+});
+
+test("governor: 400ms active frames demote; idle gap does not count", async () => {
+  const w = makeWorld();
+  const clock = { t: 1000 };
+  const stop = initSiteCaustics(w.root as never, depsFor(undefined, clock));
+  w.idleQ.shift()!();
+  await w.flush();
+  const sc = FakeScene.created[0];
+  for (let i = 0; i < 62; i++) {
+    w.win.dispatch("pointermove", { clientX: 10, clientY: 10 });
+    sc.dirty = true;
+    clock.t += 400;
+    w.step(clock.t);
+  }
+  assert.ok(sc.calls.setSolveRes.includes(128), "slow active frames demote");
+  const nBefore = sc.calls.setSolveRes.length;
+  for (let i = 0; i < 5; i++) {
+    sc.dirty = false;
+    clock.t += 16;
+    w.step(clock.t);
+  }
+  assert.equal(sc.calls.setSolveRes.length, nBefore, "idle gap adds no sample");
+  stop();
+  w.cleanup();
+});
+
+test("zero-visible-gem bench rejected; pointer skipped after empty clear", async () => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  w.idleQ.shift()!();
+  await w.flush();
+  const sc = FakeScene.created[0];
+  (w.win as unknown as { scrollY: number }).scrollY = 100000;
+  const docQ = w.doc as unknown as {
+    querySelector: (s: string) => { rect: { top: number } };
+  };
+  for (const key of [".hero h1", ".context-strip", ".about-strip"]) {
+    docQ.querySelector(key).rect.top = -98000;
+  }
+  w.win.dispatch("scroll");
+  assert.ok(
+    sc.calls.setGemVisible.slice(-3).every(([, v]) => v === false),
+    "all gems culled",
+  );
+  (window as unknown as { __gemBench: (n: number) => void }).__gemBench(30);
+  const solvesAfterReject = sc.calls.solve;
+  for (let i = 0; i < 10; i++) {
+    w.step(2000 + i * 16);
+  }
+  assert.ok(sc.calls.solve - solvesAfterReject <= 1, "at most one clearing render");
+  const lightCalls = sc.calls.setLight;
+  w.win.dispatch("pointermove", { clientX: 100, clientY: 100 });
+  assert.equal(sc.calls.setLight, lightCalls, "pointer ignored while all hidden");
+  const clearedSolves = sc.calls.solve;
+  w.win.dispatch("scroll");
+  w.step(2500);
+  assert.equal(sc.calls.solve, clearedSolves, "repeated hidden scroll skips GPU work");
+  stop();
+  w.cleanup();
+});
+
+test("narrowing disposes GPU; widening creates fresh scene", async (t) => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const first = FakeScene.created[0];
+  w.win.innerWidth = 1024;
+  w.mainEl.rect.left = 40;
+  w.mainEl.rect.right = 984;
+  w.win.dispatch("resize");
+  assert.equal(first.calls.disposed, 1);
+  assert.equal(w.root.dataset.mode, "static");
+  w.win.innerWidth = 1432;
+  w.mainEl.rect.left = 160;
+  w.mainEl.rect.right = 1272;
+  w.win.dispatch("resize");
+  await w.flush();
+  assert.equal(FakeScene.created.length, 2);
+  assert.equal(w.root.dataset.mode, "live");
+});
+
+test("pending import rechecks available gutters before allocating GPU", async (t) => {
+  const w = makeWorld();
+  let resolveMod: (v: unknown) => void = () => {};
+  const stop = initSiteCaustics(w.root as never, depsFor(() => new Promise(r => { resolveMod = r; })));
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  w.win.innerWidth = 1024;
+  w.mainEl.rect.left = 40;
+  w.mainEl.rect.right = 984;
+  w.win.dispatch("resize");
+  resolveMod({ CausticsScene: FakeScene });
+  await w.flush();
+  assert.equal(FakeScene.created.length, 0);
+  assert.equal(w.root.dataset.mode, "static");
+});
+
+test("throwing renderer factory falls back to static", async (t) => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor(async () => ({
+    CausticsScene: { create() { throw new Error("GPU unavailable"); } },
+  })));
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  assert.equal(w.root.dataset.mode, "static");
+  assert.equal(FakeScene.created.length, 0);
+});

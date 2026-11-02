@@ -27,6 +27,7 @@ import Base from "../layouts/Base.astro";
   .contact-details h2 { margin-top: 14px; font-size: 1.65rem; }
   .contact-details .eyebrow { margin-top: 0; color: var(--blue); }
   .contact-details .text-link { margin-top: 20px; }
+  @media(min-width: 1100px) { .contact-heading { column-gap: 144px; } }
   @media(max-width: 860px) { .contact-heading { gap: 28px; grid-template-columns: minmax(0,1.6fr) minmax(180px,1fr); } .portrait-orbit { padding: 26px; } }
   @media(max-width: 720px) { .contact-heading { grid-template-columns: 1fr; padding-block: 44px; gap: 36px; } .contact-portrait { max-width: 240px; } .contact-details { gap: 36px; padding-block: 36px 48px; } .contact-email { font-size: clamp(.95rem, 4.2vw, 1.45rem); } }
 </style>

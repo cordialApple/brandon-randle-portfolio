@@ -5,6 +5,7 @@ import "@fontsource-variable/martian-mono";
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
+import GemCaustics from "../components/GemCaustics.astro";
 
 interface Props { title?: string; description?: string }
 const {
@@ -44,6 +45,7 @@ const ogImage = new URL("/og.png", Astro.site);
     <meta name="twitter:image" content={ogImage} />
   </head>
   <body>
+    <GemCaustics />
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="site-shell">
       <Nav section={section} />

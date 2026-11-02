@@ -10,6 +10,7 @@ Requires Node compatible with installed Astro version. Use lockfile for reproduc
 npm ci
 npm run dev
 npm run check
+npm test
 npm run build
 npm run preview
 ```
@@ -27,6 +28,8 @@ npm run preview
 - `scripts/gen-og.mjs`: regenerate matching social preview with `node scripts/gen-og.mjs`.
 
 Existing `/work/telemetry`, `/work/interview`, `/work/peekbar`, `/work/bms`, and `/contact` routes remain. New `/work/production-telemetry` covers internship ingestion work.
+
+Gemstone rendering, diagnostics, fallback behavior, and validation: [caustics notes](docs/caustics.md). Use Node 22.12+; verified with Node 22.21.0.
 
 Before publishing content updates, reconcile resume dates, project status, and metric scope. Synthetic workloads remain explicitly labeled. Use original-size evidence links for readable charts on phones.
 
