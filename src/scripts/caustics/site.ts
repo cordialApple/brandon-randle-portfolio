@@ -10,6 +10,7 @@ export interface GemAnchor {
   fallbackDocY: number;
   zone?: "hero" | "projects" | "about" | "work" | "contact" | "case";
   radius?: number;
+  scale?: number;
 }
 
 export interface GemPlacement {
@@ -28,6 +29,11 @@ interface GemSpace {
 const GEM_EDGE_PADDING = 12;
 const MIN_GEM_RADIUS = 40;
 const GEM_LABELS = { brilliant: "cyan", step: "mint", shard: "pink" };
+const GEM_ROTATIONS = {
+  brilliant: { rx: -1.152, ry: -1.6320000000000001 },
+  step: { rx: 5.244, ry: -18.978 },
+  shard: { rx: 1.5, ry: -0.8759999999999997 },
+};
 
 export function fitGemInSpace(
   space: GemSpace,
@@ -139,6 +145,7 @@ function anchorsFor(path: string): GemAnchor[] {
       fallbackDocY: 640,
       zone: "projects",
       radius: 72,
+      scale: 1.5,
     },
     {
       cut: "shard",
@@ -149,6 +156,7 @@ function anchorsFor(path: string): GemAnchor[] {
       fallbackDocY: 2000,
       zone: "about",
       radius: 96,
+      scale: 1.5,
     },
   ];
 }
@@ -188,7 +196,8 @@ export function initSiteCaustics(
   };
 
   let scene: CausticsScene | null = null;
-  const poses = anchors.map(initialGemPose);
+  const defaultPoses = anchors.map(a => ({ ...initialGemPose(), ...GEM_ROTATIONS[a.cut] }));
+  const poses = defaultPoses.map(pose => ({ ...pose }));
   let controls: ReturnType<typeof createGemControls> | null = null;
   let poseDirty = false;
   let raf = 0;
@@ -227,7 +236,7 @@ export function initSiteCaustics(
   let allHidden = true;
   let clearedOnce = false;
 
-  const measure = () => {
+  const measure = (enlarge = true) => {
     const mainRect = mainEl?.getBoundingClientRect() ?? null;
     const contentLeft = mainRect ? mainRect.left : 56;
     const contentRight = mainRect ? mainRect.right : window.innerWidth - 56;
@@ -280,7 +289,10 @@ export function initSiteCaustics(
         }
         if (space) {
           const placement = fitGemInSpace(space, window.scrollY, a.radius ?? 68);
-          if (placement) return placement;
+          if (placement) {
+            if (enlarge) placement.r *= a.scale ?? 1;
+            return placement;
+          }
         }
       }
       const el = document.querySelector(a.selector);
@@ -296,7 +308,7 @@ export function initSiteCaustics(
 
   const drawStatic = () => {
     staticLayer.innerHTML = "";
-    const placements = measure();
+    const placements = measure(false);
     anchors.forEach((a, i) => {
       const p = placements[i];
       if (!p) return;
@@ -345,18 +357,26 @@ export function initSiteCaustics(
       scene!.setGemSize(i, p.r);
       scene!.setGemRotation(i, pose.rx, pose.ry);
       const bounds = scene!.gemBounds(i);
-      const x = Math.max(12 - bounds.min.x, Math.min(scene!.W - 12 - bounds.max.x, p.x + pose.x));
-      const docY = Math.max(12 + bounds.max.y, Math.min(document.documentElement.scrollHeight - 12 + bounds.min.y, p.docY + pose.y));
+      const midY = (bounds.min.y + bounds.max.y) / 2;
+      const halfHeight = (bounds.max.y - bounds.min.y) / 2;
+      const x = Math.max(
+        GEM_EDGE_PADDING - bounds.min.x,
+        Math.min(scene!.W - GEM_EDGE_PADDING - bounds.max.x, p.x + pose.x),
+      );
+      const docY = Math.max(
+        GEM_EDGE_PADDING + halfHeight,
+        Math.min(document.documentElement.scrollHeight - GEM_EDGE_PADDING - halfHeight, p.docY + pose.y),
+      );
       pose.x = x - p.x;
       pose.y = docY - p.docY;
       const vpY = docY - scrollY;
       const r = scene!.gemRadius(i);
       const onScreen = vpY > -r * 3 && vpY < H + r * 3;
       const z = Math.max(p.r * (a.cut === "shard" ? 0.6 : 1.1) + 8, 8 - bounds.min.z);
-      scene!.setGemCenter(i, x, H - vpY, z);
+      scene!.setGemCenter(i, x, H - vpY - midY, z);
       scene!.setGemVisible(i, onScreen);
-      const top = vpY - bounds.max.y;
-      const bottom = vpY - bounds.min.y;
+      const top = vpY - halfHeight;
+      const bottom = vpY + halfHeight;
       controls?.update(i, bottom > 0 && top < H ? {
         left: x + bounds.min.x, top,
         width: bounds.max.x - bounds.min.x, height: bottom - top,
@@ -547,7 +567,7 @@ export function initSiteCaustics(
     controls = createGemControls(anchors.map(a => GEM_LABELS[a.cut]), poses, () => {
       poseDirty = true;
       wake();
-    }, nowFn);
+    }, nowFn, defaultPoses);
     layoutGems();
     const focus = measure().find(p => p && p.docY >= scrollY && p.docY < scrollY + scene!.H);
     scene.setLight(

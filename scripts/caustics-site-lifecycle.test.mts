@@ -110,7 +110,8 @@ class FakeScene {
   }
   rotations: number[][] = [];
   setGemRotation(i: number, x: number, y: number) { this.rotations[i] = [x, y]; }
-  gemBounds() { return { min: { x: -60, y: -50, z: -90 }, max: { x: 60, y: 50, z: 70 } }; }
+  bounds = { min: { x: -60, y: -50, z: -90 }, max: { x: 60, y: 50, z: 70 } };
+  gemBounds() { return this.bounds; }
   gemRadius() { return 90; }
   setSolveRes(r: number) { this.calls.setSolveRes.push(r); this.dirty = true; }
   resize(w: number, h: number) { this.calls.resize.push([w, h]); this.W = w; this.H = h; this.dirty = true; }
@@ -241,6 +242,39 @@ function depsFor(loader?: () => Promise<unknown>, clock?: { t: number }) {
 }
 
 import { initSiteCaustics } from "../src/scripts/caustics/site.ts";
+import { createGemControls } from "../src/scripts/caustics/controls.ts";
+
+test("reset restores saved rotation after controls restart", (t) => {
+  const w = makeWorld();
+  t.after(() => w.cleanup());
+  const defaults = [{ x: 0, y: 0, rx: 1.5, ry: -0.876 }];
+  const poses = [{ x: 40, y: 20, rx: 2, ry: 3 }];
+  const controls = createGemControls(["pink"], poses, () => {}, () => 0, defaults);
+  t.after(() => controls.dispose());
+  const group = (w.doc.body as El).children[0].children[1];
+  group.children[0].dispatch("keydown", { key: "Home", preventDefault() {} });
+  assert.deepEqual(poses, defaults);
+  poses[0].rx += 1;
+  group.children[1].dispatch("dblclick");
+  assert.deepEqual(poses, defaults);
+});
+
+test("asymmetric rotated bounds stay vertically centered at their anchor", async (t) => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const scene = FakeScene.created[0];
+  const group = (w.doc.body as El).children.find(e => e.className === "gem-interactions")!.children[1];
+  const centerY = () => Number.parseFloat(group.style.top) + Number.parseFloat(group.style.height) / 2;
+  const anchorY = centerY();
+  scene.bounds = { min: { x: -60, y: -20, z: -90 }, max: { x: 60, y: 80, z: 70 } };
+  w.win.dispatch("resize");
+  assert.equal(centerY(), anchorY);
+  const meshY = scene.calls.setGemCenter.filter(c => c[0] === 0).at(-1)![2];
+  assert.equal(scene.H - meshY - 30, anchorY, "mesh and control share visual center");
+});
 
 test("elastic return can be grabbed mid-flight and settles without losing rotation", async (t) => {
   const w = makeWorld();
@@ -299,6 +333,7 @@ test("gem controls move, rotate, cancel, reset, and release on teardown", async 
   const [move, rotate] = group.children;
   const center = () => s.calls.setGemCenter.filter(c => c[0] === 0).at(-1)!;
   const initial = [...center()];
+  const initialRotation = [...s.rotations[0]];
   const pointer = (clientX: number, clientY: number) => ({
     pointerId: 1, button: 0, clientX, clientY, preventDefault() {},
   });
@@ -317,7 +352,7 @@ test("gem controls move, rotate, cancel, reset, and release on teardown", async 
   assert.ok(s.rotations[0].every(v => v !== 0));
   rotate.dispatch("pointercancel", pointer(180, 150));
   w.step(48);
-  assert.deepEqual(s.rotations[0], [0, 0]);
+  assert.deepEqual(s.rotations[0], initialRotation);
   move.dispatch("dblclick", { preventDefault() {} });
   w.step(64);
   assert.deepEqual(center(), initial);
@@ -326,7 +361,7 @@ test("gem controls move, rotate, cancel, reset, and release on teardown", async 
   assert.notEqual(s.rotations[0][1], 0);
   move.dispatch("keydown", { key: "Home", preventDefault() {} });
   w.step(96);
-  assert.deepEqual(s.rotations[0], [0, 0]);
+  assert.deepEqual(s.rotations[0], initialRotation);
   move.dispatch("pointerdown", pointer(100, 100));
   const beforeMoves = s.calls.setGemCenter.length;
   move.dispatch("pointermove", pointer(-10000, -10000));

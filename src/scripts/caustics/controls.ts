@@ -16,7 +16,13 @@ export interface GemPose {
 
 export const initialGemPose = (): GemPose => ({ x: 0, y: 0, rx: 0, ry: 0 });
 
-export function createGemControls(labels: string[], poses: GemPose[], changed: () => void, now = () => performance.now()) {
+export function createGemControls(
+  labels: string[],
+  poses: GemPose[],
+  changed: () => void,
+  now = () => performance.now(),
+  resetPoses = poses.map(pose => ({ ...pose, x: 0, y: 0 })),
+) {
   const layer = document.createElement("div");
   layer.className = "gem-interactions";
   const help = document.createElement("p");
@@ -74,7 +80,7 @@ export function createGemControls(labels: string[], poses: GemPose[], changed: (
     const reset = () => {
       finish();
       springs[index] = null;
-      Object.assign(poses[index], initialGemPose());
+      Object.assign(poses[index], resetPoses[index]);
       changed();
     };
     for (const rotate of [false, true]) {

@@ -97,3 +97,11 @@ Based on Apple's [Designing Fluid Interfaces](https://developer.apple.com/videos
 39 tests pass, including spring position/velocity continuity, identical trajectories across 60/120Hz and uneven intervals, resistance, paused release, mid-return re-grab, retained rotation, and idle shutdown. Astro check clean; nine-route build succeeds. Actual Edge drag sampled during return and confirmed exact home placement. At scrollY 1190.5 all six controls have zero-size hidden bounds; screenshot shows no orphan handle over project cards.
 
 Production moving-light check, native foreground verified: 1432×721 CSS / 2148×1081 canvas, 192², two active gems/eight calls, 320 rendered/300 measured after warmup. Mean 11.86 ms, p50 8.40 ms, p95 25.00 ms. UTC 2026-11-02 03:21:34.413; asset `GemCaustics.astro_astro_type_script_index_0_lang.B5g2SbdQ.js`. No local checks/builds running. This measures normal lighting, not gesture latency; native spring interaction checked separately. Header availability label also removed from shared navigation.
+
+## Saved poses and centering — 2026-11-01
+
+Captured user's live rotations through Edge's debugger without reloading preview. Default x/y angles, radians: cyan `-1.152, -1.6320000000000001`; mint `5.244, -18.978`; pink `1.5, -0.8759999999999997`. Home/double-click restores these poses, including after renderer restart. Rotation remains interactive.
+
+Visible rotated bounds now center vertically within each existing anchor space. Desktop homepage mint/pink scale 1.5×; cyan size unchanged. Tight-gutter and static fallbacks retain prior sizing. At 1432px viewport: mint bounds `134.019×67.8772` → `201.029×101.816` CSS px; pink `104.172×62.985` → `156.259×94.4775`. Both dimensions grow 50%; all three vertical centers match measured section midpoints. Browser rotation/reset restores identical bounds; no shader errors.
+
+41 tests pass, including asymmetric visual centering and saved-pose reset. Typecheck and nine-route build pass. Ray count, solve resolution, shader passes unchanged; no new foreground timing collected for enlarged poses. Earlier timings above apply to their recorded versions.
