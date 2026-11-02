@@ -25,6 +25,7 @@ export interface GemSpec {
   center: { x: number; y: number; z: number };
   size: number;
   tint: string;
+  causticGain?: number;
 }
 
 export interface CausticsParams {
@@ -83,6 +84,7 @@ interface Gem {
   baseProj: number;
   center: THREE.Vector3;
   tint: string;
+  causticGain: number;
   visible: boolean;
 }
 
@@ -281,6 +283,7 @@ export class CausticsScene {
         baseProj: projR,
         center,
         tint: spec.tint,
+        causticGain: spec.causticGain ?? 1,
         visible: true,
       });
       this.scene.add(mesh);
@@ -406,7 +409,7 @@ export class CausticsScene {
       sm.gemModelMatrix.value.copy(gem.mesh.matrixWorld);
       sm.bounces.value = params.bounces;
       sm.ior.value = params.ior;
-      sm.intensity.value = params.intensity;
+      sm.intensity.value = params.intensity * gem.causticGain;
       sm.splatSizePx.value = params.splatSize;
       sm.maxDist.value = 4000;
       sm.tint.value.set(gem.tint);

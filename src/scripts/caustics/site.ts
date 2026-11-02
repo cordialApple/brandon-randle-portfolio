@@ -7,12 +7,42 @@ export interface GemAnchor {
   selector: string;
   yFrac: number;
   fallbackDocY: number;
+  zone?: "hero" | "projects" | "about" | "work" | "contact" | "case";
+  radius?: number;
 }
 
 export interface GemPlacement {
   x: number;
   docY: number;
   r: number;
+}
+
+interface GemSpace {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+const GEM_EDGE_PADDING = 12;
+const MIN_GEM_RADIUS = 40;
+
+export function fitGemInSpace(
+  space: GemSpace,
+  scrollY: number,
+  preferredRadius: number,
+): GemPlacement | null {
+  const r = Math.min(
+    preferredRadius,
+    (space.right - space.left) / 2 - GEM_EDGE_PADDING,
+    (space.bottom - space.top) / 2 - GEM_EDGE_PADDING,
+  );
+  if (r < MIN_GEM_RADIUS) return null;
+  return {
+    x: (space.left + space.right) / 2,
+    docY: scrollY + (space.top + space.bottom) / 2,
+    r,
+  };
 }
 
 export function marginGemPlacement(
@@ -22,18 +52,17 @@ export function marginGemPlacement(
   contentRight: number,
   viewportW: number,
 ): GemPlacement | null {
-  const pad = 12;
   const gutter = edge === "left" ? contentLeft : viewportW - contentRight;
-  const r = Math.min(44, (gutter - pad * 2) * 0.34);
-  if (r < 14) return null;
+  const r = Math.min(76, (gutter - GEM_EDGE_PADDING * 2) / 2);
+  if (r < MIN_GEM_RADIUS) return null;
   return {
-    x: edge === "left" ? pad + r : viewportW - pad - r,
+    x: edge === "left" ? GEM_EDGE_PADDING + r : viewportW - GEM_EDGE_PADDING - r,
     docY: anchorDocY,
     r,
   };
 }
 
-export const QUALITY_TIERS = [128, 96, 64] as const;
+export const QUALITY_TIERS = [256, 192, 128] as const;
 
 export function nextQualityTier(
   tier: number,
@@ -69,6 +98,8 @@ function anchorsFor(path: string): GemAnchor[] {
         selector: ".work-list",
         yFrac: 0.06,
         fallbackDocY: 420,
+        zone: /^\/work\/?$/.test(path) ? "work" : "case",
+        radius: 64,
       },
     ];
   }
@@ -81,6 +112,8 @@ function anchorsFor(path: string): GemAnchor[] {
         selector: ".contact-heading",
         yFrac: 0.65,
         fallbackDocY: 300,
+        zone: "contact",
+        radius: 64,
       },
     ];
   }
@@ -92,6 +125,8 @@ function anchorsFor(path: string): GemAnchor[] {
       selector: ".hero h1",
       yFrac: 0.5,
       fallbackDocY: 300,
+      zone: "hero",
+      radius: 76,
     },
     {
       cut: "step",
@@ -100,6 +135,8 @@ function anchorsFor(path: string): GemAnchor[] {
       selector: ".context-strip",
       yFrac: 0.5,
       fallbackDocY: 640,
+      zone: "projects",
+      radius: 72,
     },
     {
       cut: "shard",
@@ -108,6 +145,8 @@ function anchorsFor(path: string): GemAnchor[] {
       selector: ".about-strip",
       yFrac: 0.2,
       fallbackDocY: 2000,
+      zone: "about",
+      radius: 96,
     },
   ];
 }
@@ -187,8 +226,58 @@ export function initSiteCaustics(
     const mainRect = mainEl?.getBoundingClientRect() ?? null;
     const contentLeft = mainRect ? mainRect.left : 56;
     const contentRight = mainRect ? mainRect.right : window.innerWidth - 56;
-    const vw = window.innerWidth;
+    const vw = document.documentElement?.clientWidth ?? window.innerWidth;
+    const rect = (selector: string) =>
+      document.querySelector(selector)?.getBoundingClientRect();
+    const columns = (left: string, right: string, vertical: string) => {
+      const leftRect = rect(left);
+      const rightRect = rect(right);
+      const verticalRect = rect(vertical);
+      if (!leftRect || !rightRect || !verticalRect) return null;
+      return {
+        left: leftRect.right,
+        right: rightRect.left,
+        top: verticalRect.top - 16,
+        bottom: verticalRect.bottom + 16,
+      };
+    };
+    const sectionGap = (before: string, after: string, xFraction: number) => {
+      const beforeRect = rect(before);
+      const afterRect = rect(after);
+      const x = contentLeft + (contentRight - contentLeft) * xFraction;
+      if (!beforeRect || !afterRect) return null;
+      return {
+        left: x - 110,
+        right: x + 110,
+        top: beforeRect.bottom,
+        bottom: afterRect.top,
+      };
+    };
     return anchors.map((a) => {
+      if (window.innerWidth >= 1100 && a.zone) {
+        let space: GemSpace | null = null;
+        if (a.zone === "hero") {
+          space = columns(".hero-copy", ".hero-portrait", ".hero h1");
+        } else if (a.zone === "projects") {
+          space = sectionGap(".context-strip", ".selected-work .section-heading", 0.76);
+        } else if (a.zone === "about") {
+          space = sectionGap("#experience", ".about-strip", 0.3);
+        } else if (a.zone === "work") {
+          space = columns(".work-intro", ".work-signal", ".work-heading");
+        } else if (a.zone === "contact") {
+          space = columns(".contact-copy", ".contact-portrait", ".contact-copy");
+        } else {
+          const title = rect(".case-heading h1");
+          if (title) space = {
+            left: title.right, right: contentRight,
+            top: title.top - 24, bottom: title.bottom + 24,
+          };
+        }
+        if (space) {
+          const placement = fitGemInSpace(space, window.scrollY, a.radius ?? 68);
+          if (placement) return placement;
+        }
+      }
       const el = document.querySelector(a.selector);
       const docY = anchorDocY(
         el ? el.getBoundingClientRect() : null,
@@ -239,7 +328,7 @@ export function initSiteCaustics(
     const ps = measure();
     const H = scene.H;
     let any = false;
-    anchors.forEach((_a, i) => {
+    anchors.forEach((a, i) => {
       const p = ps[i];
       const gem = scene!.gems[i];
       if (!p || !gem) {
@@ -249,7 +338,7 @@ export function initSiteCaustics(
       const vpY = p.docY - scrollY;
       const onScreen = vpY > -p.r * 3 && vpY < H + p.r * 3;
       scene!.setGemSize(i, p.r);
-      scene!.setGemCenter(i, p.x, H - vpY, 55);
+      scene!.setGemCenter(i, p.x, H - vpY, p.r * (a.cut === "shard" ? 0.6 : 1.1) + 8);
       scene!.setGemVisible(i, onScreen);
       if (onScreen) any = true;
     });
@@ -398,6 +487,7 @@ export function initSiteCaustics(
           return anchors.map((a, i) => ({
             cut: a.cut,
             tint: a.tint,
+            causticGain: a.cut === "step" ? 0.72 : 1,
             size: ps[i]?.r ?? 1,
             center: { x: -9999, y: 0, z: 55 },
           }));
@@ -414,8 +504,11 @@ export function initSiteCaustics(
     }
     scene = created;
     scene.params.directStrength = 0;
-    scene.params.causticStrength = 0.55;
-    scene.params.splatSize = 2.5;
+    scene.params.lightHeight = 180;
+    scene.params.intensity = 9000;
+    scene.params.causticStrength = 1.35;
+    scene.params.splatSize = 4;
+    scene.params.blurRadius = 1.5;
     scene.renderer.info.autoReset = false;
     ema = 0;
     emaN = 0;
@@ -426,7 +519,12 @@ export function initSiteCaustics(
     scrollY = window.scrollY;
     scene.resize(window.innerWidth, window.innerHeight);
     layoutGems();
-    scene.setLight(scene.W * 0.68, scene.H * 0.45, scene.params.lightHeight);
+    const focus = measure().find(p => p && p.docY >= scrollY && p.docY < scrollY + scene!.H);
+    scene.setLight(
+      focus ? Math.min(focus.x + 140, scene.W - 20) : scene.W * 0.68,
+      focus ? scene.H - (focus.docY - scrollY) + 60 : scene.H * 0.45,
+      scene.params.lightHeight,
+    );
     deactivateStatic();
     installDebugBox();
     wake();

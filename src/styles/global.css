@@ -23,6 +23,10 @@ a,button { -webkit-tap-highlight-color: transparent; }
 .gem-layer .gem-static .gem-accent { position: absolute; }
 .gem-layer[data-mode="live"] .gem-static { display: none; }
 .gem-layer[data-mode="static"] .gem-canvas { display: none; }
+@media (min-width: 1100px) {
+  .section-block.selected-work { padding-top: 180px; }
+  .section-block + .about-strip { margin-top: 208px; }
+}
 .site-header,main,.site-footer { width: min(100% - 112px, 1280px); margin-inline: auto; }
 .site-header { min-height: 100px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--edge); }
 .brand { display: inline-flex; align-items: center; gap: 13px; font-size: 1.2rem; font-weight: 650; white-space: nowrap; letter-spacing: -.04em; }

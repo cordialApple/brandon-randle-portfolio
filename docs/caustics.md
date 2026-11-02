@@ -1,6 +1,6 @@
 # Gemstone caustics
 
-Cursor-driven point light, procedural gems, and colored caustic deposits. Homepage uses cyan brilliant, mint step cut, and pink shard; work/contact use one accent. Anchors follow document sections, with geometry sized to available gutters.
+Cursor-driven point light, procedural gems, colored caustic deposits. Homepage: cyan brilliant, tilted mint step cut, pink shard. Work/contact: one accent. Desktop gems fit measured open space between columns or sections; wide outer gutters remain fallback.
 
 Visual reference: [Caustica Blender reel](https://www.instagram.com/reel/DeKQVmUOsB3/). Browser implementation uses Three.js and three-mesh-bvh, without React or a path tracer. Dependency licenses ship at `/caustics-third-party-notices.txt`.
 
@@ -13,9 +13,12 @@ This implementation uses solid-angle-weighted forward splats, replacing the orig
 ## Site behavior
 
 - Graphics module loads after page load and an idle callback.
-- Solve resolution adapts through 128, 96, and 64 samples per axis; canvas pixel ratio capped at 1.5.
+- Solve resolution adapts through 256, 192, and 128 samples per axis; canvas pixel ratio capped at 1.5.
+- Hero target diameter 152px; mint 144px; pink up to 192px, fitted to section gap. Projected silhouette varies by cut. Minimum fitted diameter 80px; crowded spaces hide gems.
+- Desktop section gaps reserve 180px above projects and 208px above about. Below 1100px, normal section spacing returns; narrow gutters hide gems.
+- Site light height 180, intensity 9000, caustic gain 1.35, splat size 4, blur radius 1.5. Mint deposits use 0.72 intensity multiplier, preserving gem shading while reducing scattered light. Stronger, sharper fans remain approximation-based; distant deposits can retain stipple.
 - Pointer movement moves the light; scroll/resize update anchors. No autonomous motion.
-- Reduced motion, coarse pointers, unsupported WebGL, and context loss use static accents. Gems hide when gutters cannot fit them.
+- Reduced motion, coarse pointers, unsupported WebGL, context loss use static accents where space fits.
 - Decorative layer ignores pointer input and stays outside the accessibility tree.
 
 ## Manual review
@@ -26,7 +29,9 @@ Append `?gemDebug=1` to a site page for diagnostic controls. Keep browser visibl
 
 Review home, work, contact, and case routes; test links, keyboard focus, scrolling, resize, reduced-motion changes, and back/forward restoration. Mobile browser checks and desktop GPU timing must be reported separately.
 
-## Measured validation — 2026-11-01
+## Earlier small-gem validation — 2026-11-01
+
+Historical measurements for `88c4964`, before larger geometry and higher solve tiers. These results do not measure current visual revision.
 
 Edge on Intel Arc 140V, ANGLE D3D11. Actual foreground tab verified through native Edge window; browser automation's selected-tab and visibility signals alone did not prove foreground selection. Every run below rendered 320 frames, excluding 20 warmup frames and retaining all 300 measured intervals. Point light follows a continuous orbit; eight refraction bounces.
 
@@ -43,3 +48,13 @@ Diagnostic counter originally changed text every frame and polluted page timing:
 28 tests pass; Astro check reports zero errors/warnings/hints; nine-route static build succeeds. Geometry, lifecycle, narrow-gutter resource disposal, delayed import, context loss, and browser Back restoration checked. Devin verified 390×844 and 1024×768 static layouts; local viewport override did not reliably resize the intended tab. Coarse-pointer behavior covered by controller tests. Safari, Apple Silicon, discrete GPUs, and physical mobile devices remain untested.
 
 Sources measured: integration commit `33019cc` plus benchmark-counter change described above. UTC result timestamps: 2026-11-02 01:34:21.002 (lab), 01:37:22.792 and 01:38:32.141 (homepage); local date November 1, America/Chicago.
+
+## Larger-gem revision — 2026-11-01
+
+Devin reviewed actual before/after screenshots. Hero scale/placement accepted; pink enlarged and lowered within its reserved gap; mint tilted, then deposits reduced 28% after feedback about scattered beams. Pink fan judged closest to reel. Remaining distant stipple is sampling artifact, not intended particle animation. Renderer clears and reconstructs caustics each frame; no temporal accumulation.
+
+Final production build, same Edge/Arc device: homepage at scrollY 0, 1432×721 CSS pixels, 2148×1081 canvas pixels, 256² samples per gem, two active gems, eight calls. Native foreground verified. 320 rendered frames, 20 warmup excluded, 300 measured: mean 17.03 ms, p50 16.70 ms, p95 33.30 ms. Result sits at 33.3 ms budget; limited headroom, no universal performance guarantee. UTC 2026-11-02 02:29:48.662; script asset `GemCaustics.astro_astro_type_script_index_0_lang.4ZMFOmN_.js`.
+
+Supplementary one-active-gem view at scrollY 1455: mean 8.58 ms, p50 8.30 ms, p95 8.50 ms, five calls, same dimensions/quality. Earlier larger-gem runs before mint attenuation measured p95 33.30–33.40 ms. Canvas ratio 1.25 experiment gave no clear benefit; retained 1.5. Earlier small-gem 10.3 ms result above does not describe this revision.
+
+31 tests pass; Astro check: zero errors/warnings/hints. Nine-route build succeeds; existing graphics-bundle size warning remains. Local visual checks: home hero/mint/pink, work, contact, production case. Viewport checks at 390×844, 1024×768, 1100×768: no horizontal overflow; narrow layouts static/hidden, desktop gem fits corridor. Overrides reset. These are desktop browser viewport checks, not physical mobile testing.

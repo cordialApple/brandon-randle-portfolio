@@ -220,17 +220,19 @@ export function projectedRadius(geo: THREE.BufferGeometry): number {
 }
 
 export function makeGemGeo(cut: "brilliant" | "step" | "shard"): THREE.BufferGeometry {
-  let geo: THREE.BufferGeometry;
   if (cut === "step") {
-    geo = makeStepGeometry(1.2, 0.85, 0.38, 1.0, 2, 3);
-  } else if (cut === "shard") {
-    geo = makeShardGeometry(5, 0.8, 2.3);
+    const geo = makeStepGeometry(1.2, 0.85, 0.38, 1.0, 2, 3);
+    geo.rotateX(Math.PI / 3);
+    geo.rotateZ(-0.22);
+    return geo;
+  }
+  if (cut === "shard") {
+    const geo = makeShardGeometry(5, 0.8, 2.3);
     geo.rotateX(Math.PI / 4);
     geo.rotateZ(0.3);
     return geo;
-  } else {
-    geo = makeGemGeometry(8, 1, 0.35, 1.05, 0.55);
   }
+  const geo = makeGemGeometry(8, 1, 0.35, 1.05, 0.55);
   geo.rotateX(Math.PI / 2);
   return geo;
 }

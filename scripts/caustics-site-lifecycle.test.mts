@@ -123,7 +123,7 @@ interface World {
   cleanup: () => void;
 }
 
-function makeWorld(width = 1432, gutter = 76): World {
+function makeWorld(width = 1432, gutter = 160): World {
   FakeScene.created = [];
   const win = new T() as World["win"];
   const doc = new T() as World["doc"];
@@ -382,8 +382,8 @@ test("narrow boot inits no GPU; widening revives via resize", async () => {
   assert.equal(loaded, 0, "no GPU with no fitting anchor");
   assert.equal(w.root.dataset.mode, "static");
   (w.win as unknown as { innerWidth: number }).innerWidth = 1432;
-  w.mainEl.rect.left = 76;
-  w.mainEl.rect.right = 1356;
+  w.mainEl.rect.left = 160;
+  w.mainEl.rect.right = 1272;
   w.win.dispatch("resize");
   await w.flush();
   assert.equal(loaded, 1);
@@ -405,7 +405,7 @@ test("governor: 400ms active frames demote; idle gap does not count", async () =
     clock.t += 400;
     w.step(clock.t);
   }
-  assert.ok(sc.calls.setSolveRes.includes(96), "slow active frames demote");
+  assert.ok(sc.calls.setSolveRes.includes(192), "slow active frames demote");
   const nBefore = sc.calls.setSolveRes.length;
   for (let i = 0; i < 5; i++) {
     sc.dirty = false;
@@ -466,8 +466,8 @@ test("narrowing disposes GPU; widening creates fresh scene", async (t) => {
   assert.equal(first.calls.disposed, 1);
   assert.equal(w.root.dataset.mode, "static");
   w.win.innerWidth = 1432;
-  w.mainEl.rect.left = 76;
-  w.mainEl.rect.right = 1356;
+  w.mainEl.rect.left = 160;
+  w.mainEl.rect.right = 1272;
   w.win.dispatch("resize");
   await w.flush();
   assert.equal(FakeScene.created.length, 2);
