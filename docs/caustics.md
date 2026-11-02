@@ -77,3 +77,13 @@ Matched foreground checks, Edge / Intel Arc 140V, 1432×720 CSS, 2148×1080 canv
 Final pair: 28% lower mean frame interval, 25% lower p95. Comparison evaluates complete default profiles, including deliberately lower ray count; it does not claim bigger footprints are free at equal sample count. No slowdown observed on this device; other hardware remains unmeasured. Final script asset: `GemCaustics.astro_astro_type_script_index_0_lang.BWFyxWK2.js`.
 
 32 tests pass, including numerical kernel-energy integration over footprint radii 2–28. Typecheck clean; nine-route build succeeds with existing graphics-bundle warning. GPU shader compiles without errors; actual three-cut screenshots reviewed. Responsive/lifecycle behavior unchanged and existing controller tests pass.
+
+## Gem interaction — 2026-11-01
+
+Drag gem to move; drag ↻ handle or Shift-drag to tumble. Arrow keys move; Shift+arrows rotate; rotation handle accepts arrows directly. Home or double-click resets. Escape, pointer cancellation, lost capture, or window blur cancels current gesture. Positions remain document-anchored through scrolling; offsets adapt with responsive anchors. Reload resets poses. Coarse-pointer, narrow-screen, and reduced-motion static fallbacks remain unchanged.
+
+Controls sit outside decorative canvas, with input restricted to gem bounds and small handles. Offscreen controls leave keyboard order. Pointer capture preserves drags outside handles; wheel scrolling remains available. Rotation updates visible and light-normal meshes together, reuses existing BVH, and uses transformed vertices for tight bounds and floor clearance. Pointer changes coalesce once per rendered frame; ordinary light motion adds no DOM updates, rays, or draw calls. Stop/context-loss paths remove controls and listeners.
+
+33 tests pass, including move/rotate/cancel/reset, keyboard controls, edge clamping, light hold, frame coalescing, and teardown. Astro check clean; nine-route build succeeds with existing graphics-bundle warning. Native Edge checks confirm actual drag, handle rotation, double-click reset, and unchanged document position after scrolling over gem.
+
+Foreground production check: same Edge/Intel Arc 140V, homepage reset poses, 1432×720 CSS / 2148×1080 canvas, 192² solve, two active gems/eight calls. 320 rendered frames, 20 warmup excluded, 300 measured: mean 12.58 ms, p50 8.40 ms, p95 25.00 ms; previous continuous-light p95 also 25.00 ms. UTC 2026-11-02 03:08:46.002; asset `GemCaustics.astro_astro_type_script_index_0_lang.CIxNI_DU.js`. Native foreground verified before/after; no local builds/tests during timing. Benchmark measures moving light at reset poses, not arbitrary user-arranged overlap or rotation. Manual gesture checks separate; other hardware unmeasured.

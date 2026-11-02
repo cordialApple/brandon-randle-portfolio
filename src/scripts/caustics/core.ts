@@ -357,6 +357,26 @@ export class CausticsScene {
     return this.gems[i]?.radius ?? 0;
   }
 
+  setGemRotation(i: number, x: number, y: number) {
+    const g = this.gems[i];
+    if (!g) return;
+    g.mesh.rotation.set(x, y, 0);
+    g.lightMesh.rotation.copy(g.mesh.rotation);
+    this.dirty = true;
+  }
+
+  gemBounds(i: number) {
+    const g = this.gems[i];
+    const transform = new THREE.Matrix4().compose(new THREE.Vector3(), g.mesh.quaternion, g.mesh.scale);
+    const bounds = new THREE.Box3();
+    const vertex = new THREE.Vector3();
+    const positions = g.geo.getAttribute("position");
+    for (let n = 0; n < positions.count; n++) {
+      bounds.expandByPoint(vertex.fromBufferAttribute(positions, n).applyMatrix4(transform));
+    }
+    return bounds;
+  }
+
   private fitLightCamera(gem: Gem) {
     const { lightPos, lightCam } = this;
     const dist = lightPos.distanceTo(gem.center);

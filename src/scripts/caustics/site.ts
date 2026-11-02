@@ -1,4 +1,5 @@
 import type { CausticsScene } from "./core";
+import { createGemControls, initialGemPose } from "./controls.ts";
 
 export interface GemAnchor {
   cut: "brilliant" | "step" | "shard";
@@ -26,6 +27,7 @@ interface GemSpace {
 
 const GEM_EDGE_PADDING = 12;
 const MIN_GEM_RADIUS = 40;
+const GEM_LABELS = { brilliant: "cyan", step: "mint", shard: "pink" };
 
 export function fitGemInSpace(
   space: GemSpace,
@@ -186,6 +188,9 @@ export function initSiteCaustics(
   };
 
   let scene: CausticsScene | null = null;
+  const poses = anchors.map(initialGemPose);
+  let controls: ReturnType<typeof createGemControls> | null = null;
+  let poseDirty = false;
   let raf = 0;
   let idleId = 0;
   let idleCancelled = false;
@@ -333,13 +338,29 @@ export function initSiteCaustics(
       const gem = scene!.gems[i];
       if (!p || !gem) {
         scene!.setGemVisible(i, false);
+        controls?.update(i, null);
         return;
       }
-      const vpY = p.docY - scrollY;
-      const onScreen = vpY > -p.r * 3 && vpY < H + p.r * 3;
+      const pose = poses[i];
       scene!.setGemSize(i, p.r);
-      scene!.setGemCenter(i, p.x, H - vpY, p.r * (a.cut === "shard" ? 0.6 : 1.1) + 8);
+      scene!.setGemRotation(i, pose.rx, pose.ry);
+      const bounds = scene!.gemBounds(i);
+      const x = Math.max(12 - bounds.min.x, Math.min(scene!.W - 12 - bounds.max.x, p.x + pose.x));
+      const docY = Math.max(12 + bounds.max.y, Math.min(document.documentElement.scrollHeight - 12 + bounds.min.y, p.docY + pose.y));
+      pose.x = x - p.x;
+      pose.y = docY - p.docY;
+      const vpY = docY - scrollY;
+      const r = scene!.gemRadius(i);
+      const onScreen = vpY > -r * 3 && vpY < H + r * 3;
+      const z = Math.max(p.r * (a.cut === "shard" ? 0.6 : 1.1) + 8, 8 - bounds.min.z);
+      scene!.setGemCenter(i, x, H - vpY, z);
       scene!.setGemVisible(i, onScreen);
+      const top = vpY - bounds.max.y;
+      const bottom = vpY - bounds.min.y;
+      controls?.update(i, bottom > 0 && top < H ? {
+        left: x + bounds.min.x, top,
+        width: bounds.max.x - bounds.min.x, height: bottom - top,
+      } : null);
       if (onScreen) any = true;
     });
     if (any) clearedOnce = false;
@@ -374,6 +395,10 @@ export function initSiteCaustics(
   const tick = (now: number) => {
     raf = 0;
     if (disposed || !scene) return;
+    if (poseDirty) {
+      poseDirty = false;
+      layoutGems();
+    }
     const dt = now - (lastRenderNow || now);
     if (bench) {
       bench.t += dt / 1000;
@@ -518,6 +543,10 @@ export function initSiteCaustics(
     lastRenderNow = 0;
     scrollY = window.scrollY;
     scene.resize(window.innerWidth, window.innerHeight);
+    controls = createGemControls(anchors.map(a => GEM_LABELS[a.cut]), poses, () => {
+      poseDirty = true;
+      wake();
+    });
     layoutGems();
     const focus = measure().find(p => p && p.docY >= scrollY && p.docY < scrollY + scene!.H);
     scene.setLight(
@@ -558,6 +587,8 @@ export function initSiteCaustics(
     raf = 0;
     wasActive = false;
     invalidateBench("stopped mid-run");
+    controls?.dispose();
+    controls = null;
     scene?.dispose();
     scene = null;
     debugBox?.remove();
@@ -582,7 +613,7 @@ export function initSiteCaustics(
   };
 
   const onPointer = (e: Event) => {
-    if (!scene || (allHidden && clearedOnce)) return;
+    if (!scene || controls?.active || (allHidden && clearedOnce)) return;
     const pe = e as PointerEvent;
     scene.setLight(pe.clientX, scene.H - pe.clientY, scene.params.lightHeight);
     wake();

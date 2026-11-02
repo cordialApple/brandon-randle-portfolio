@@ -27,6 +27,13 @@ class El extends T {
   classList = { add: () => {} };
   rect = { top: 0, left: 0, right: 0, height: 100 };
   textContent = "";
+  className = "";
+  hidden = false;
+  captured: number | null = null;
+  setPointerCapture(id: number) { this.captured = id; }
+  hasPointerCapture(id: number) { return this.captured === id; }
+  releasePointerCapture() { this.captured = null; }
+  focus() {}
   private inner = "";
   set innerHTML(v: string) {
     this.inner = v;
@@ -42,7 +49,8 @@ class El extends T {
   append(...cs: El[]) {
     this.children.push(...cs);
   }
-  remove() {}
+  removed = false;
+  remove() { this.removed = true; }
   setAttribute() {}
   addEventListener(t: string, fn: EventListener) {
     super.addEventListener(t, fn);
@@ -100,6 +108,10 @@ class FakeScene {
     this.calls.setGemSize.push([i, s]);
     this.dirty = true;
   }
+  rotations: number[][] = [];
+  setGemRotation(i: number, x: number, y: number) { this.rotations[i] = [x, y]; }
+  gemBounds() { return { min: { x: -60, y: -50, z: -90 }, max: { x: 60, y: 50, z: 70 } }; }
+  gemRadius() { return 90; }
   setSolveRes(r: number) { this.calls.setSolveRes.push(r); this.dirty = true; }
   resize(w: number, h: number) { this.calls.resize.push([w, h]); this.W = w; this.H = h; this.dirty = true; }
   solve() { this.calls.solve++; }
@@ -174,6 +186,7 @@ function makeWorld(width = 1432, gutter = 160): World {
     hidden: false,
     readyState: "complete",
     body: new El(),
+    documentElement: { scrollHeight: 4000 },
     fonts: { ready: { then: () => {} } },
     querySelector: (sel: string) =>
       sel === "main" ? mainEl : (anchorEls[sel] ?? null),
@@ -228,6 +241,65 @@ function depsFor(loader?: () => Promise<unknown>, clock?: { t: number }) {
 }
 
 import { initSiteCaustics } from "../src/scripts/caustics/site.ts";
+
+test("gem controls move, rotate, cancel, reset, and release on teardown", async (t) => {
+  const w = makeWorld();
+  const stop = initSiteCaustics(w.root as never, depsFor());
+  t.after(() => { stop(); w.cleanup(); });
+  w.idleQ.shift()!();
+  await w.flush();
+  const s = FakeScene.created[0];
+  const overlay = (w.doc.body as El).children.find(e => e.className === "gem-interactions");
+  assert.ok(overlay, "controls created outside decorative layer");
+  const group = overlay.children[1];
+  const [move, rotate] = group.children;
+  const center = () => s.calls.setGemCenter.filter(c => c[0] === 0).at(-1)!;
+  const initial = [...center()];
+  const pointer = (clientX: number, clientY: number) => ({
+    pointerId: 1, button: 0, clientX, clientY, preventDefault() {},
+  });
+  move.dispatch("pointerdown", pointer(100, 100));
+  move.dispatch("pointermove", pointer(140, 120));
+  w.step(16);
+  assert.equal(center()[1], initial[1] + 40);
+  assert.equal(center()[2], initial[2] - 20);
+  const lightCalls = s.calls.setLight;
+  w.win.dispatch("pointermove", pointer(140, 120));
+  assert.equal(s.calls.setLight, lightCalls, "light held while grabbing gem");
+  move.dispatch("pointerup", pointer(140, 120));
+  rotate.dispatch("pointerdown", pointer(140, 120));
+  rotate.dispatch("pointermove", pointer(180, 150));
+  w.step(32);
+  assert.ok(s.rotations[0].every(v => v !== 0));
+  rotate.dispatch("pointercancel", pointer(180, 150));
+  w.step(48);
+  assert.deepEqual(s.rotations[0], [0, 0]);
+  move.dispatch("dblclick", { preventDefault() {} });
+  w.step(64);
+  assert.deepEqual(center(), initial);
+  rotate.dispatch("keydown", { key: "ArrowRight", preventDefault() {} });
+  w.step(80);
+  assert.notEqual(s.rotations[0][1], 0);
+  move.dispatch("keydown", { key: "Home", preventDefault() {} });
+  w.step(96);
+  assert.deepEqual(s.rotations[0], [0, 0]);
+  move.dispatch("pointerdown", pointer(100, 100));
+  const beforeMoves = s.calls.setGemCenter.length;
+  move.dispatch("pointermove", pointer(-10000, -10000));
+  move.dispatch("pointermove", pointer(-20000, -20000));
+  assert.equal(s.calls.setGemCenter.length, beforeMoves, "pointer updates coalesce before frame");
+  w.step(112);
+  assert.equal(center()[1], 72, "left extent stays inside page");
+  assert.equal(center()[2], 838, "top extent stays inside document");
+  w.win.dispatch("blur");
+  w.step(128);
+  assert.deepEqual(center(), initial, "blur cancels in-progress drag");
+  move.dispatch("pointerdown", pointer(100, 100));
+  stop();
+  assert.equal(move.captured, null);
+  assert.equal(overlay.removed, true);
+  assert.equal(w.win.count("blur"), 0);
+});
 
 test("boot: lazy start creates scene on idle and goes live", async () => {
   const w = makeWorld();
