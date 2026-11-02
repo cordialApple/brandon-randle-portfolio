@@ -405,7 +405,7 @@ test("governor: 400ms active frames demote; idle gap does not count", async () =
     clock.t += 400;
     w.step(clock.t);
   }
-  assert.ok(sc.calls.setSolveRes.includes(192), "slow active frames demote");
+  assert.ok(sc.calls.setSolveRes.includes(128), "slow active frames demote");
   const nBefore = sc.calls.setSolveRes.length;
   for (let i = 0; i < 5; i++) {
     sc.dirty = false;

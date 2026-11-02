@@ -62,7 +62,7 @@ export function marginGemPlacement(
   };
 }
 
-export const QUALITY_TIERS = [256, 192, 128] as const;
+export const QUALITY_TIERS = [192, 128, 96] as const;
 
 export function nextQualityTier(
   tier: number,

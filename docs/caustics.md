@@ -6,17 +6,17 @@ Visual reference: [Caustica Blender reel](https://www.instagram.com/reel/DeKQVmU
 
 ## Rendering
 
-Each visible gem gets a perspective light-view normal/depth pass. Rays refract through its BVH, including total internal reflection; forward splats accumulate tinted light on a flat receiver. Shared blur and composite passes finish the image. Gem highlights use the same point light. Site canvas stays transparent behind DOM content; lab adds an opaque receiver and depth shadows.
+Each visible gem gets a perspective light-view normal/depth pass. Rays refract through its BVH, including total internal reflection; forward splats reconstruct tinted light on a flat receiver. Normalized Gaussian footprints grow with estimated ray spread and receiver incidence, filling gaps between samples. Shared blur and composite passes finish image. Gem highlights use same point light. Site canvas stays transparent behind DOM content; lab adds opaque receiver and depth shadows.
 
 This implementation uses solid-angle-weighted forward splats, replacing the original plan's area-ratio gather. Tint filtering is approximate; no spectral dispersion, inter-gem light transport, or physically calibrated brightness. Reference reel remains a fidelity target, not a browser performance claim.
 
 ## Site behavior
 
 - Graphics module loads after page load and an idle callback.
-- Solve resolution adapts through 256, 192, and 128 samples per axis; canvas pixel ratio capped at 1.5.
+- Solve resolution adapts through 192, 128, and 96 samples per axis; canvas pixel ratio capped at 1.5. Reconstructed footprints let default use 44% fewer rays than previous 256² tier.
 - Hero target diameter 152px; mint 144px; pink up to 192px, fitted to section gap. Projected silhouette varies by cut. Minimum fitted diameter 80px; crowded spaces hide gems.
 - Desktop section gaps reserve 180px above projects and 208px above about. Below 1100px, normal section spacing returns; narrow gutters hide gems.
-- Site light height 180, intensity 9000, caustic gain 1.35, splat size 4, blur radius 1.5. Mint deposits use 0.72 intensity multiplier, preserving gem shading while reducing scattered light. Stronger, sharper fans remain approximation-based; distant deposits can retain stipple.
+- Site light height 180, intensity 9000, caustic gain 1.35, footprint control 4, blur radius 1.5. Mint deposits use 0.72 intensity multiplier, preserving gem shading while reducing scattered light. Footprint radius capped at 28 CSS pixels; approximation can soften distant details. Disconnected facet beams can remain.
 - Pointer movement moves the light; scroll/resize update anchors. No autonomous motion.
 - Reduced motion, coarse pointers, unsupported WebGL, context loss use static accents where space fits.
 - Decorative layer ignores pointer input and stays outside the accessibility tree.
@@ -49,7 +49,7 @@ Diagnostic counter originally changed text every frame and polluted page timing:
 
 Sources measured: integration commit `33019cc` plus benchmark-counter change described above. UTC result timestamps: 2026-11-02 01:34:21.002 (lab), 01:37:22.792 and 01:38:32.141 (homepage); local date November 1, America/Chicago.
 
-## Larger-gem revision — 2026-11-01
+## Earlier larger-gem revision — 2026-11-01
 
 Devin reviewed actual before/after screenshots. Hero scale/placement accepted; pink enlarged and lowered within its reserved gap; mint tilted, then deposits reduced 28% after feedback about scattered beams. Pink fan judged closest to reel. Remaining distant stipple is sampling artifact, not intended particle animation. Renderer clears and reconstructs caustics each frame; no temporal accumulation.
 
@@ -58,3 +58,22 @@ Final production build, same Edge/Arc device: homepage at scrollY 0, 1432×721 C
 Supplementary one-active-gem view at scrollY 1455: mean 8.58 ms, p50 8.30 ms, p95 8.50 ms, five calls, same dimensions/quality. Earlier larger-gem runs before mint attenuation measured p95 33.30–33.40 ms. Canvas ratio 1.25 experiment gave no clear benefit; retained 1.5. Earlier small-gem 10.3 ms result above does not describe this revision.
 
 31 tests pass; Astro check: zero errors/warnings/hints. Nine-route build succeeds; existing graphics-bundle size warning remains. Local visual checks: home hero/mint/pink, work, contact, production case. Viewport checks at 390×844, 1024×768, 1100×768: no horizontal overflow; narrow layouts static/hidden, desktop gem fits corridor. Overrides reset. These are desktop browser viewport checks, not physical mobile testing.
+
+## Continuous-light reconstruction — 2026-11-01
+
+Fixed square deposits replaced with truncated Gaussian footprints. Radius estimates angular sample spread from existing solid angle, entry distance, exit distance, receiver incidence; clamp prevents oversized splats. Kernel integrates to one; amplitude scales inversely with radius squared. Larger footprints fill gaps without adding BVH traces or temporal history. Explicit trace-debug modes retain square diagnostic markers. Isotropic estimate is not exact ray differentials; distant structures soften and disconnected facet beams can remain.
+
+Site tiers now 192/128/96, versus 256/192/128. Top tier traces 36,864 samples per active gem instead of 65,536. Same eight-bounce limit, gem sizes, light, canvas ratio, blur, and eight draw calls for two active gems. No new dependency or render pass. Devin inspected actual hero/mint/pink screenshots against user's reference: continuous angular fans, readable text, no excessive blur; further anisotropic reconstruction unnecessary for this visual target.
+
+Matched foreground checks, Edge / Intel Arc 140V, 1432×720 CSS, 2148×1080 canvas, homepage scrollY 0. All runs: 320 rendered, 20 warmup excluded, 300 measured, two active gems/eight calls. No local tests/builds during runs; native window confirmed selected page before and after final pair.
+
+| Version | Solve | Mean / p50 / p95 frame interval | UTC timestamp, Nov 2 |
+| --- | --- | --- | --- |
+| Draft baseline `0493327` | 256² | 16.81 / 16.70 / 33.20 ms | 02:38:19.728 |
+| Baseline repeat | 256² | 17.03 / 16.70 / 33.40 ms | 02:44:33.404 |
+| Reconstructed default | 192² | 12.31 / 8.40 / 25.00 ms | 02:42:40.689 |
+| Final repeat | 192² | 12.22 / 8.40 / 25.00 ms | 02:44:56.049 |
+
+Final pair: 28% lower mean frame interval, 25% lower p95. Comparison evaluates complete default profiles, including deliberately lower ray count; it does not claim bigger footprints are free at equal sample count. No slowdown observed on this device; other hardware remains unmeasured. Final script asset: `GemCaustics.astro_astro_type_script_index_0_lang.BWFyxWK2.js`.
+
+32 tests pass, including numerical kernel-energy integration over footprint radii 2–28. Typecheck clean; nine-route build succeeds with existing graphics-bundle warning. GPU shader compiles without errors; actual three-cut screenshots reviewed. Responsive/lifecycle behavior unchanged and existing controller tests pass.

@@ -95,6 +95,7 @@ export function makeLightNormalMaterial() {
 }
 
 export function makeSplatMaterial(): THREE.ShaderMaterial {
+  const kernelExponent = 4;
   return new THREE.ShaderMaterial({
     uniforms: {
       lightViewInv: { value: new THREE.Matrix4() },
@@ -111,6 +112,10 @@ export function makeSplatMaterial(): THREE.ShaderMaterial {
       tint: { value: new THREE.Color(1, 1, 1) },
       intensity: { value: 1.0 },
       splatSizePx: { value: 2.0 },
+      kernelExponent: { value: kernelExponent },
+      kernelNormalization: {
+        value: kernelExponent / (Math.PI * (1 - Math.exp(-kernelExponent))),
+      },
       maxDist: { value: 2000.0 },
       receiverPlane: { value: new THREE.Vector4(0, 0, 1, 0) },
       debugStage: { value: 0 },
@@ -140,6 +145,7 @@ export function makeSplatMaterial(): THREE.ShaderMaterial {
         vec3 normal = normalize(texture2D(normalTex, a_uv).rgb * 2.0 - 1.0);
         vec3 inDir = normalize(pos - lightPos);
         vec3 hit;
+        float radius = splatSizePx * 0.5;
         if (debugStage == 1 || debugStage == 2) {
           float t1 = planeIntersect(pos, inDir, receiverPlane);
           if (!(t1 > 0.0 && t1 <= maxDist)) return;
@@ -177,16 +183,31 @@ export function makeSplatMaterial(): THREE.ShaderMaterial {
           vec3 d11 = normalize(WorldPosFromDepth(0.0, a_uv + r) - lightPos);
           float omega = 0.5 * length(cross(d10 - d00, d11 - d00))
                       + 0.5 * length(cross(d11 - d00, d01 - d00));
-          // normalize by kernel footprint so splat size doesn't create energy
-          vColor = tint * omega * intensity / (splatSizePx * splatSizePx);
+          float incidence = max(abs(dot(exitD, receiverPlane.xyz)), 0.25);
+          float spread = sqrt(omega) * (distance(pos, lightPos) + t) / incidence;
+          radius = clamp(1.8 * spread, max(splatSizePx * 0.75, 2.0), 28.0);
+          vColor = tint * omega * intensity / (radius * radius);
         }
         gl_Position = projectionMatrix * viewMatrix * vec4(hit, 1.0);
-        gl_PointSize = splatSizePx;
+        gl_PointSize = radius * 2.0;
       }
     `,
     fragmentShader: /* glsl */ `
       varying vec3 vColor;
-      void main() { gl_FragColor = vec4(vColor, 1.0); }
+      uniform int debugStage;
+      uniform float kernelExponent;
+      uniform float kernelNormalization;
+      void main() {
+        if (debugStage != 0) {
+          gl_FragColor = vec4(vColor, 1.0);
+          return;
+        }
+        vec2 p = gl_PointCoord * 2.0 - 1.0;
+        float d = dot(p, p);
+        if (d > 1.0) discard;
+        float weight = kernelNormalization * exp(-kernelExponent * d);
+        gl_FragColor = vec4(vColor * weight, 1.0);
+      }
     `,
     blending: THREE.AdditiveBlending,
     depthTest: false,
